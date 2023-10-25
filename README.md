@@ -42,7 +42,13 @@ To reproduce data analytics
 python3 src/display.py
 ```
 
+### Data Collection Steps
 
+Use command below to launch synchronised recording of slave Azure Kinect
+
+```bash
+k4arecorder --external-sync sub -l 300 /home/path/repo/Azure-Kinect-Sensor-SDK/dataset/2023_XX_XX/ROBLAB_0X/sub1.mkv
+```
 
 ------
 
