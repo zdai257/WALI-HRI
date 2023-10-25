@@ -1,0 +1,107 @@
+ Program
+   Robot Program
+     Gripper Activate
+     Wait: 10.0
+     Gripper Open (1)
+     Loop 20 times
+       MoveJ
+         start_position
+       MoveJ
+         backcase_pos
+         Gripper Close (1)
+         Grip Check
+           If object detected          
+             release_pos
+             Gripper Open (1)
+           Else
+             Gripper Open (1)
+             Gripper Close (1)
+             Grip Check
+               If object detected          
+                 release_pos
+                 Gripper Open (1)
+               Else
+                 Gripper Open (1)
+                 Popup
+                 Gripper Close (1)
+                 Grip Check
+                   If object detected          
+                     release_pos
+                     Gripper Open (1)
+                   Else
+                     Gripper Open (1)
+                     Gripper Close (1)
+                     Grip Check
+                       If object detected          
+                         release_pos
+                         Gripper Open (1)
+                       Else
+                         Gripper Open (1)
+                         Halt
+       MoveJ
+         pcb_pos
+         Gripper Close (1)
+         Grip Check
+           If object detected          
+             release_pos
+             Gripper Open (1)
+           Else
+             Gripper Open (1)
+             Popup
+             Gripper Close (1)
+             Grip Check
+               If object detected          
+                 release_pos
+                 Gripper Open (1)
+               Else
+                 Gripper Open (1)
+                 Gripper Close (1)
+                 Grip Check
+                   If object detected          
+                     release_pos
+                     Gripper Open (1)
+                   Else
+                     Gripper Open (1)
+                     Gripper Close (1)
+                     Grip Check
+                       If object detected          
+                         release_pos
+                         Gripper Open (1)
+                       Else
+                         Gripper Open (1)
+                         Halt
+       MoveJ
+         frontcase_pos
+         Gripper Close (1)
+         Grip Check
+           If object detected          
+             release_pos
+             Gripper Open (1)
+           Else
+             Gripper Open (1)
+             Popup
+             Gripper Close (1)
+             Grip Check
+               If object detected          
+                 release_pos
+                 Gripper Open (1)
+               Else
+                 Gripper Open (1)
+                 Gripper Close (1)
+                 Grip Check
+                   If object detected          
+                     release_pos
+                     Gripper Open (1)
+                   Else
+                     Gripper Open (1)
+                     Gripper Close (1)
+                     Grip Check
+                       If object detected          
+                         release_pos
+                         Gripper Open (1)
+                       Else
+                         Gripper Open (1)
+                         Halt
+       MoveJ
+         start_position
+       Wait: 10.0
