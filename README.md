@@ -84,6 +84,8 @@ UR Script for Universal Robots the pick-and-handover routine is provided in *UR-
 
 ### Licence
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 This repository is available under the MIT License. Contributions are not accepted. If you notice issues, feel free to raise them or email the authors.
 
 ------
