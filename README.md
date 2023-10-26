@@ -82,7 +82,7 @@ UR Script for Universal Robots the pick-and-handover routine is provided in *UR-
 
 ------
 
-### Licence
+### License
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
