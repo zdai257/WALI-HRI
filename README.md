@@ -2,16 +2,19 @@
 
 ### Introduction
 
-This dataset aims to foster affective computing in human attention, aka engagement, 
-tracking in industrial Human-Robot Interaction settings. A multimodal sensing of 
-manifold worker attention lapses are recorded and timestamp annotated in order to 
-endow perception-cognition-action capabilities for robotic and autonomous agents.
+This repository presents WALI-HRI dataset, with fully annotated 
+disengagement/distraction events, collected in an industrial phone assembly scenario 
+of human-robot collaboration. Multimodal sensing streams of 28 
+human participant's attention tracking are made publicly available. The aim is to 
+endow perception and cognitive safety capabilities for intellgent robots and 
+autonomous systems.
 
 For details, please read and cite our paper:
 
 ```
 @ARTICLE{dai_wali2023,
-  author={Dai, Zhuangzhuang and XX},
+  author={Dai, Zhuangzhuang and Park, Jinha and Akhtar, Junaid and Kaszowska, 
+Aleksandra and Li, Chen},
   journal={RA-L}, 
   title={WALI-HRI}, 
   year={2023},
@@ -78,7 +81,7 @@ Use command below to launch recording of any slave Azure Kinect DK camera before
 k4arecorder --external-sync sub -l 300 /home/path/repo/Azure-Kinect-Sensor-SDK/dataset/2023_XX_XX/ROBLAB_0X/sub1.mkv
 ```
 
-UR Script for Universal Robots the pick-and-handover routine is provided in *UR-program* folder.
+UR Script for controlling Universal Robots (tested on UR3 and UR5) pick and handover routine is provided in *UR-program* folder.
 
 ------
 
@@ -97,5 +100,4 @@ This work was funded by 2022/23 Aston Pump Priming Scheme and AAU Bridging Proje
 Tasks."
 
 We thank the Greater Birmingham and Solihull Institute of Technology (GBSIoT) and the 
-Aalborg 5G Smart Production Lab for supporting our data collection campaign.
-
+Aalborg 5G Smart Production Lab for supporting the data collection campaign.
