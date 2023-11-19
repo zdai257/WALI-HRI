@@ -1,4 +1,11 @@
 .DS_Store
+.idea/
 dataset/*
 *.ipynb
+sound_masking.py
+annotation_merger.py
+Eval_LCAS.py
+*.csv
+*.xlsx
+*.bag
 
