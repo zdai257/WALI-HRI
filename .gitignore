@@ -1,6 +1,7 @@
 .DS_Store
 .idea/
 dataset/*
+data/*
 *.ipynb
 sound_masking.py
 annotation_merger.py
