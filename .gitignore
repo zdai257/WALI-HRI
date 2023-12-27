@@ -1,6 +1,8 @@
 .DS_Store
 .idea/
 dataset/*
+dataset0/*
+suite0/*
 data/*
 *.ipynb
 src/.ipynb_checkpoints/analytics-checkpoint.ipynb
