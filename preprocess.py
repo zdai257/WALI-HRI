@@ -6,6 +6,7 @@ import pickle
 import json
 import datetime
 from datetime import timedelta
+from functools import reduce
 import matplotlib.pyplot as plt
 
 
@@ -76,7 +77,9 @@ class Preprocessor(object):
         else:
             self.sheets_to_load = [item for item in os.listdir(src_dir) if not item.startswith('.')]
 
-        self.freq = '100ms'
+        self.freq = '200ms'
+        self.BLINK_CONF_THRES = 0.3
+        self.FIXATION_CONF_THRES = 0.7
         self.src_dir = src_dir
         # Annotations
         self.anno_dict = pd.read_excel("./Annotations.xlsx", sheet_name=sheets_to_load)
@@ -94,16 +97,23 @@ class Preprocessor(object):
             start_time = Info['start_time_system_s']
             dt_start = datetime.datetime.fromtimestamp(start_time)
 
+        # create the index with the start and end times you want
+        t_index = pd.DatetimeIndex(pd.date_range(start=dt_start, end=dt_start + datetime.timedelta(seconds=300),
+                                                 freq=self.freq), name='new_timestamp')
+
         for modality in self.pupil_lst:
             # TODO: need a common start_t=0 to 300 as shared indexed new_timestamp
             if modality == 'head_pose_tracker_poses.csv':
+
                 Head = pd.read_csv(join(self.src_dir, sample, 'Pupil', modality))
                 # Resample timestamps to the desired frequency
                 Head['new_timestamp'] = dt_start + pd.to_timedelta(Head['timestamp'], unit='S')
-                # Set 'timestamp' column as the index for resampling
-                Head.set_index('new_timestamp', inplace=True)
-                resampled_Head = Head.resample(self.freq).mean()
+
+                # RESAMPLE
+                resampled_Head = Head.resample(self.freq, on='new_timestamp').mean().reindex(t_index, method='nearest', limit=2)
+                # Fill NaN values in the DataFrame using 'ffill'
                 resampled_Head.fillna(method='ffill', inplace=True)
+                #print(resampled_Head.head())
 
             elif modality == 'blinks.csv':
                 Blin = pd.read_csv(join(self.src_dir, sample, 'Pupil', modality))
@@ -113,17 +123,26 @@ class Preprocessor(object):
 
                 resampled_Blin = pd.DataFrame()
                 # Iterate through intervals to expand and add feature information
+                interval = t_index
+                interval_df2 = pd.DataFrame({'new_timestamp': interval, 'blink_conf': np.nan})
                 for idx, row in Blin.iterrows():
-                    # print(row['id'])
-                    interval = pd.date_range(start=row['s_timestamp'], end=row['e_timestamp'], freq=self.freq)
-                    interval_df = pd.DataFrame({'new_timestamp': interval})
-                    interval_df['blink_conf'] = row['confidence']
-                    resampled_Blin = pd.concat([resampled_Blin, interval_df], ignore_index=True)
+                    for index, rerow in interval_df2.iterrows():
 
+                        if rerow['new_timestamp'] >= row['s_timestamp'] and rerow['new_timestamp'] <= row['e_timestamp']\
+                                and row['confidence'] > self.BLINK_CONF_THRES:
+                            #print(interval_df2.loc[index, 'blink_conf'], row['confidence'])
+                            interval_df2.loc[index, 'blink_conf'] = row['confidence']
+                            break
+
+                resampled_Blin = pd.concat([resampled_Blin, interval_df2], ignore_index=True)
+
+                #print(resampled_Blin)
                 resampled_Blin.set_index('new_timestamp', inplace=True)
                 #resampled_Blin.fillna(method='ffill', inplace=True)
 
+
             elif modality == 'fixations.csv':
+
                 Fixa = pd.read_csv(join(self.src_dir, sample, 'Pupil', modality))
                 # create columns of start/end timestamps
                 Fixa['s_timestamp'] = dt_start + pd.to_timedelta(Fixa['start_timestamp'], unit='S')
@@ -131,27 +150,40 @@ class Preprocessor(object):
 
                 resampled_Fixa = pd.DataFrame()
                 # Iterate through intervals to expand and add feature information
+                interval = t_index
+                interval_df = pd.DataFrame({'new_timestamp': interval, 'fixa_conf': np.nan,
+                                            'norm_pos_x': np.nan, 'norm_pos_y': np.nan})
                 for idx, row in Fixa.iterrows():
-                    # print(row['id'])
-                    interval = pd.date_range(start=row['s_timestamp'], end=row['e_timestamp'], freq=self.freq)
-                    interval_df = pd.DataFrame({'new_timestamp': interval})
-                    interval_df['norm_pos_x'] = row['norm_pos_x']
-                    interval_df['norm_pos_y'] = row['norm_pos_y']
-                    resampled_Fixa = pd.concat([resampled_Fixa, interval_df], ignore_index=True)
+                    for index, rerow in interval_df.iterrows():
+
+                        if rerow['new_timestamp'] >= row['s_timestamp'] and rerow['new_timestamp'] <= row['e_timestamp'] \
+                                and row['confidence'] > self.FIXATION_CONF_THRES:
+                            interval_df.loc[index, 'fixa_conf'] = row['confidence']
+                            interval_df.loc[index, 'norm_pos_x'] = row['norm_pos_x']
+                            interval_df.loc[index, 'norm_pos_y'] = row['norm_pos_y']
+                            break
+
+                resampled_Fixa = pd.concat([resampled_Fixa, interval_df], ignore_index=True)
 
                 resampled_Fixa.set_index('new_timestamp', inplace=True)
+                #resampled_Fixa.fillna(method='ffill', inplace=True)
 
             else:
                 raise TypeError("No such Pupil Feature Modality")
 
-        #print(resampled_Blin, resampled_Head)
-        resampled_data = resampled_Fixa.merge(resampled_Blin, how='left', left_index=True, right_index=True)
+        #print(resampled_Blin)
+        #print(len(resampled_Fixa), len(resampled_Head))
+        #resampled_data = resampled_Head.merge(resampled_Fixa, how='left', left_index=True, right_index=True)
+        #resampled_data = resampled_data.merge(resampled_Blin, how='left', left_index=True, right_index=True)
+        # Use "reduce" function
+        resampled_data = resampled_Head.merge(resampled_Fixa, on='new_timestamp').merge(resampled_Blin, on='new_timestamp')
+
         return resampled_data
 
 
 if __name__ == "__main__":
 
-    prep = Preprocessor(sheets_to_load=['GBSIOT_07B', 'GBSIOT_07D'])
+    prep = Preprocessor(sheets_to_load=['GBSIOT_07B'])
 
     print(prep.data)
     prep.data['GBSIOT_07B'].to_csv('./test.csv')
