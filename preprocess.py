@@ -70,7 +70,8 @@ def calculate_metrics(predictions, ground_truth, time_window=T_TOLERANCE):
 
 # Data loader class #
 class Preprocessor(object):
-    def __init__(self, sheets_to_load=None, src_dir=r"/Users/zhuangzhuangdai/Downloads/dataset_Annotations"):
+    def __init__(self, sheets_to_load=None, src_dir=None,
+                 pupil_lst=["fixations.csv", "blinks.csv", "head_pose_tracker_poses.csv"]):
         if sheets_to_load is not None:
             assert isinstance(sheets_to_load, list)
             self.sheets_to_load = sheets_to_load
@@ -84,7 +85,7 @@ class Preprocessor(object):
         # Annotations
         self.anno_dict = pd.read_excel("./Annotations.xlsx", sheet_name=sheets_to_load)
         # list of Pupil features of interest
-        self.pupil_lst = ["fixations.csv", "blinks.csv", "head_pose_tracker_poses.csv"]  # "gaze_positions.csv"
+        self.pupil_lst = pupil_lst  # "gaze_positions.csv"
 
         self.data = {}
         for samp in self.sheets_to_load:
@@ -132,7 +133,7 @@ class Preprocessor(object):
                                 and row['confidence'] > self.BLINK_CONF_THRES:
                             #print(interval_df2.loc[index, 'blink_conf'], row['confidence'])
                             interval_df2.loc[index, 'blink_conf'] = row['confidence']
-                            break
+                            #break
 
                 resampled_Blin = pd.concat([resampled_Blin, interval_df2], ignore_index=True)
 
@@ -161,12 +162,61 @@ class Preprocessor(object):
                             interval_df.loc[index, 'fixa_conf'] = row['confidence']
                             interval_df.loc[index, 'norm_pos_x'] = row['norm_pos_x']
                             interval_df.loc[index, 'norm_pos_y'] = row['norm_pos_y']
-                            break
+                            #break
 
                 resampled_Fixa = pd.concat([resampled_Fixa, interval_df], ignore_index=True)
 
                 resampled_Fixa.set_index('new_timestamp', inplace=True)
                 #resampled_Fixa.fillna(method='ffill', inplace=True)
+
+            elif modality == 'surface_events.csv':
+                Surf = pd.read_csv(join(self.src_dir, sample, 'Pupil', modality))
+                # create columns of start/end timestamps
+                Surf['world_timestamp'] = dt_start + pd.to_timedelta(Surf['world_timestamp'], unit='S')
+
+                resampled_Surf = pd.DataFrame()
+                # Iterate through intervals to expand and add feature information
+                interval = t_index
+                interval_df3 = pd.DataFrame({'new_timestamp': interval, 'in_surface': np.nan})
+                for idx, row in Surf.iterrows():
+                    if idx % 2 == 0:
+                        row_s = row
+                        continue
+                    else:
+                        row_e = row
+                    for index, rerow in interval_df3.iterrows():
+                        if rerow['new_timestamp'] >= row_s['world_timestamp'] and rerow['new_timestamp'] <= row_e['world_timestamp']:
+
+                            interval_df3.loc[index, 'in_surface'] = 1
+                            #break
+
+                resampled_Surf = pd.concat([resampled_Surf, interval_df3], ignore_index=True)
+
+                resampled_Surf.set_index('new_timestamp', inplace=True)
+
+            elif modality == 'annotations.csv':
+                Anno = pd.read_csv(join(self.src_dir, sample, 'Pupil', modality))
+                # create columns of start/end timestamps
+                Anno['timestamp'] = dt_start + pd.to_timedelta(Anno['timestamp'], unit='S')
+
+                resampled_Anno = pd.DataFrame()
+                # Iterate through intervals to expand and add feature information
+                interval = t_index
+                interval_df4 = pd.DataFrame({'new_timestamp': interval, 'annotation': np.nan})
+                for idx, row in Anno.iterrows():
+                    if idx % 2 == 0:
+                        row_s = row
+                        continue
+                    else:
+                        row_e = row
+                    for index, rerow in interval_df4.iterrows():
+                        if rerow['new_timestamp'] >= row_s['timestamp'] and rerow['new_timestamp'] <= row_e['timestamp']:
+                            interval_df4.loc[index, 'annotation'] = 1
+                            #break
+
+                resampled_Anno = pd.concat([resampled_Anno, interval_df4], ignore_index=True)
+
+                resampled_Anno.set_index('new_timestamp', inplace=True)
 
             else:
                 raise TypeError("No such Pupil Feature Modality")
@@ -183,74 +233,28 @@ class Preprocessor(object):
 
 if __name__ == "__main__":
 
-    prep = Preprocessor(sheets_to_load=['GBSIOT_07B'])
+    OUTPUT_TYPE = "csv"  # "csv" or "pkl"
+    data_dir = r"/Users/zhuangzhuangdai/Downloads/dataset_Annotations"
 
-    print(prep.data)
-    prep.data['GBSIOT_07B'].to_csv('./test.csv')
+    if OUTPUT_TYPE == "csv":
+        # output one sample .csv for example
+        prep = Preprocessor(sheets_to_load=['GBSIOT_07B', 'GBSIOT_07D'], src_dir=data_dir)
+
+        for k, v in prep.data.items():
+            csv_dir = "./data_csvs"
+            if not os.path.exists(csv_dir):
+                os.makedirs(csv_dir)
+            prep.data[k].to_csv(join(csv_dir, k + ".csv"))
+
+    elif OUTPUT_TYPE == "pkl":
+        sheet_lst = [item for item in os.listdir(data_dir) if not item.startswith(".")]
+
+        prep = Preprocessor(sheets_to_load=sheet_lst, src_dir=data_dir)
+
+        with open('data_pkl.pkl', 'wb') as handle:
+            pickle.dump(prep.data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    else:
+        raise TypeError("Output format not supported!")
+
     exit()
-
-    for sample in prep.sheets_to_load:
-        print("\nStudying sample: ", sample)
-
-        src_fd = prep.src_dir
-        pupil_lst = prep.pupil_lst
-
-        with open(join(src_fd, sample, 'Pupil', "info.player.json")) as f:
-            Info = json.load(f)
-            start_time = Info['start_time_system_s']
-            print(datetime.datetime.fromtimestamp(start_time))
-        Gaze = pd.read_csv(join(src_fd, sample, 'Pupil', pupil_lst[0]))
-        Fixa = pd.read_csv(join(src_fd, sample, 'Pupil', pupil_lst[1]))
-        Blin = pd.read_csv(join(src_fd, sample, 'Pupil', pupil_lst[2]))
-        Head = pd.read_csv(join(src_fd, sample, 'Pupil', pupil_lst[3]))
-
-        #print(pd.to_timedelta(Head['timestamp'], unit='S'))
-        Head_ts = pd.to_timedelta(Head['timestamp'], unit='S')
-        Head['timestamp'] = Head_ts
-        #print(Head.resample('100ms', on='timestamp').transform('mean'))
-
-        Gaze_ts = pd.to_timedelta(Gaze['gaze_timestamp'], unit='S')
-        Gaze['timestamp'] = Gaze_ts
-        #print(Gaze.resample('100ms', on='timestamp').transform('mean'))
-
-        # Convert the 'timestamp' column to a datetime object if it's not already in datetime format
-        Head['new_timestamp'] = datetime.datetime.fromtimestamp(start_time) + pd.to_timedelta(Head['timestamp'], unit='S')
-        # Set 'timestamp' column as the index for resampling
-        Head.set_index('new_timestamp', inplace=True)
-
-        resampled_Head = Head.resample('100ms').mean()
-
-        resampled_Head.fillna(method='ffill', inplace=True)
-
-        # Interval-modalities
-        Blin['s_timestamp'] = datetime.datetime.fromtimestamp(start_time) + pd.to_timedelta(Blin['start_timestamp'], unit='S')
-        Blin['e_timestamp'] = Blin['s_timestamp'] + pd.to_timedelta(Blin['duration'], unit='ms')
-
-        resampled_Blin = pd.DataFrame()
-        # Iterate through intervals to expand and add feature information
-        for idx, row in Blin.iterrows():
-            #print(row['id'])
-            interval = pd.date_range(start=row['s_timestamp'], end=row['e_timestamp'], freq='100ms')
-            interval_df = pd.DataFrame({'new_timestamp': interval})
-            interval_df['blink_conf'] = row['confidence']
-            resampled_Blin = pd.concat([resampled_Blin, interval_df], ignore_index=True)
-
-        resampled_Blin.set_index('new_timestamp', inplace=True)
-        print(resampled_Blin)
-
-        exit()
-
-        for t, idx, conf, posX, posY in zip(Gaze['gaze_timestamp'], Gaze['world_index'], Gaze['confidence'],
-                                            Gaze['norm_pos_x'], Gaze['norm_pos_y']):
-            print(t, conf)
-
-
-
-
-    # break
-
-    # Final stats
-
-
-    #print(results)
-
