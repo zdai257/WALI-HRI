@@ -10,12 +10,13 @@ from datetime import timedelta
 from functools import reduce
 import matplotlib.pyplot as plt
 import argparse
+import librosa
 
 
 # Data loader class #
 class Preprocessor(object):
     def __init__(self, sheets_to_load=None, src_dir=None,
-                 pupil_lst=["fixations.csv", "blinks.csv", "head_pose_tracker_poses.csv", "surface_events.csv", "Annotations.xlsx"]):
+                 pupil_lst=["fixations.csv", "blinks.csv", "head_pose_tracker_poses.csv", "surface_events.csv", "sound_recording", "Annotations.xlsx"]):
         if sheets_to_load is not None:
             assert isinstance(sheets_to_load, list)
             self.sheets_to_load = sheets_to_load
@@ -47,7 +48,7 @@ class Preprocessor(object):
                                                  freq=self.freq), name='new_timestamp')
 
         for modality in self.pupil_lst:
-            # TODO: need a common start_t=0 to 300 as shared indexed new_timestamp
+            # Head Poses are made compulsory and coherent
             if modality == 'head_pose_tracker_poses.csv':
 
                 Head = pd.read_csv(join(self.src_dir, 'data', sample, 'Pupil', modality))
@@ -59,7 +60,44 @@ class Preprocessor(object):
                 # Fill NaN values in the DataFrame using 'ffill'
                 resampled_Head.fillna(method='ffill', inplace=True)
                 #print(resampled_Head.head())
-
+                
+                # Sound feats made compulsory
+                if "sound_recording" in self.pupil_lst:
+                    audio_dir = join(self.src_dir, 'data', sample, 'Sound')
+                    for soundfile in os.listdir(audio_dir):
+                        if soundfile.startswith('sound_recording') and soundfile.endswith('.wav'):
+                            audio_file = join(audio_dir, soundfile)
+                            break
+                            
+                    y, sr = librosa.load(audio_file)
+                    
+                    #t = 100.0
+                    n_fft = 500
+                    hop_length = 250
+                    n_mels = 32
+                    
+                    #audio_start_idx = max(0, int(t - 0.5) * sr)
+                    mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+                    
+                    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+                    # Calculate time stamps for each column in the Mel-spectrogram
+                    mel_timestamps = np.arange(mel_spec.shape[1]) * hop_length / sr
+                    
+                    # Create a DataFrame with Mel-spectrogram and timestamps
+                    mel_data = {'new_timestamp': mel_timestamps}
+                    for i in range(n_mels):
+                        mel_data[f'mel_{i + 1}'] = mel_spec_db[i, :]
+                        
+                        
+                    mel_df = pd.DataFrame(mel_data)
+                    mel_df['new_timestamp'] = dt_start + pd.to_timedelta(mel_df['new_timestamp'], unit='S')
+                    
+                    # RESAMPLE
+                    resampled_Mel = mel_df.resample(self.freq, on='new_timestamp').mean().reindex(t_index, method='nearest', limit=2)
+                    resampled_Mel.fillna(method='ffill', inplace=True)
+                    #print(resampled_Mel.head())
+                    
+                
             elif modality == 'blinks.csv':
                 Blin = pd.read_csv(join(self.src_dir, 'data', sample, 'Pupil', modality))
                 # create columns of start/end timestamps
@@ -162,16 +200,19 @@ class Preprocessor(object):
                 resampled_Anno = pd.concat([resampled_Anno, interval_df4], ignore_index=True)
 
                 resampled_Anno.set_index('new_timestamp', inplace=True)
-
+                
+            elif modality == "sound_recording":
+                pass
+                
             else:
-                raise TypeError("No such Pupil Feature Modality")
+               raise TypeError("No such Pupil Feature Modality")
 
         #print(resampled_Blin)
         #print(len(resampled_Fixa), len(resampled_Head))
         #resampled_data = resampled_Head.merge(resampled_Fixa, how='left', left_index=True, right_index=True)
         #resampled_data = resampled_data.merge(resampled_Blin, how='left', left_index=True, right_index=True)
         # Use "reduce" function
-        resampled_data = resampled_Head.merge(resampled_Fixa, on='new_timestamp').merge(resampled_Blin, on='new_timestamp').merge(resampled_Surf, on='new_timestamp').merge(resampled_Anno, on='new_timestamp')
+        resampled_data = resampled_Head.merge(resampled_Fixa, on='new_timestamp').merge(resampled_Blin, on='new_timestamp').merge(resampled_Surf, on='new_timestamp').merge(resampled_Anno, on='new_timestamp').merge(resampled_Mel, on="new_timestamp")
 
         return resampled_data
 
