@@ -4,6 +4,7 @@ dataset/*
 dataset0/*
 suite0/*
 data/*
+/data_csvs
 *.ipynb
 src/.ipynb_checkpoints/analytics-checkpoint.ipynb
 sound_masking.py
