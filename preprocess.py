@@ -71,23 +71,25 @@ class Preprocessor(object):
                             
                     y, sr = librosa.load(audio_file)
                     
-                    #t = 100.0
-                    n_fft = 500
-                    hop_length = 250
-                    n_mels = 32
+                    ''' n_fft refers to the number of samples per frame used for the Fourier Transform. It determines the length of the window applied to each frame of the signal. Larger n_fft values provide finer frequency resolution in the resulting spectrogram. A longer window (n_fft) provides more frequency bins but might lose time resolution because it involves larger chunks of audio.'''
+                    n_fft = 2048  #500
+                    '''hop_length specifies the number of samples between the start of successive frames. Smaller hop_length values result in higher time resolution but produce a larger number of frames, leading to increased computational cost. Larger hop_length values decrease time resolution but can speed up computation.'''
+                    hop_length = 960  #250
+                    n_mels = 40  #32
                     
                     #audio_start_idx = max(0, int(t - 0.5) * sr)
                     mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
                     
                     mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
                     # Calculate time stamps for each column in the Mel-spectrogram
+                    # [0, 1, 2,... fn] * frame_duration
+                    '''Each frame of the audio signal, upon which the Fourier Transform is applied, is n_fft samples long. This window moves along the audio signal with a step size determined by hop_length. The time covered by each frame in seconds can be calculated as frame_duration = hop_length / sr. The total time covered by n frames can be calculated as total_time = n * frame_duration.'''
                     mel_timestamps = np.arange(mel_spec.shape[1]) * hop_length / sr
                     
                     # Create a DataFrame with Mel-spectrogram and timestamps
                     mel_data = {'new_timestamp': mel_timestamps}
                     for i in range(n_mels):
                         mel_data[f'mel_{i + 1}'] = mel_spec_db[i, :]
-                        
                         
                     mel_df = pd.DataFrame(mel_data)
                     mel_df['new_timestamp'] = dt_start + pd.to_timedelta(mel_df['new_timestamp'], unit='S')
@@ -243,7 +245,7 @@ if __name__ == "__main__":
         prep = Preprocessor(sheets_to_load=sheet_lst, src_dir=data_dir)
 
         with open('data_pkl.pkl', 'wb') as handle:
-            pickle.dump(prep.data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(prep.data, handle, protocol=pickle.DEFAULT_PROTOCOL)
 
     else:
         raise TypeError("Output format not supported!")
