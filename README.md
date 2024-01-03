@@ -53,7 +53,7 @@ If only to use the dataset, you do not need to recreate the environment.
 
 ### Usage
 
-The WALI-HAI dataset is publicly available at a **Box shared drive**. Note the full dataset size is about 105GB.
+The WALI-HAI dataset is publicly available at a [**Box shared drive**](https://aston.box.com/s/vdh27hmczaoyx4t8rbsobjf6mjn67kmb). Note the full dataset size is about 105GB.
 
 To download a data sample
 
@@ -69,7 +69,7 @@ To load the dataset as a *pandas DataFrame* and resample the multimodal data in 
 python3 preprocess.py --type csv
 ```
 
-or directly load the pre-processed *data_pkl.pkl* pickle file.
+or directly load the pre-processed *data_pkl.pkl* pickle file. Note you need *python=3.11* and *pandas=1.5.3* to load the pickle file directly.
 
 ### Data Collection Pipeline
 

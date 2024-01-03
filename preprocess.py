@@ -240,11 +240,20 @@ if __name__ == "__main__":
             prep.data[k].to_csv(join(csv_dir, k + ".csv"))
 
     elif OUTPUT_TYPE == "pkl":
+        exported_pkl = './data_pkl.pkl'
+
+        if os.path.isfile(exported_pkl):
+            with open(exported_pkl, 'rb') as handle:
+                my_data = pickle.load(handle)
+                print("Existing .pkl loaded!")
+                print(len(my_data.keys()), my_data[next(iter(my_data))].head(20))
+            exit()
+
         sheet_lst = [item for item in os.listdir(join(data_dir, 'data')) if not item.startswith(".")]
 
         prep = Preprocessor(sheets_to_load=sheet_lst, src_dir=data_dir)
 
-        with open('data_pkl.pkl', 'wb') as handle:
+        with open(exported_pkl, 'wb') as handle:
             pickle.dump(prep.data, handle, protocol=pickle.DEFAULT_PROTOCOL)
 
     else:
