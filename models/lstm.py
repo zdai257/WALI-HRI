@@ -1,8 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.optim import RMSprop
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
 
 class LSTM1(nn.Module):
@@ -27,45 +24,9 @@ class LSTM1(nn.Module):
 
 def build_lstm():
 
-    learning_rate = 0.001
-    batch_size = 64
-    num_epochs = 100
-    early_stop_patience = 5
-
     # Initialize the LSTM model
     model = LSTM1()
-    print(model); exit()
+    #print(model)
 
-    optimizer = RMSprop(model.parameters(), lr=learning_rate)
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss for binary classification
-
-    # Example data (replace this with your own dataset)
-    # X, y = your_data  # Replace this with your actual data and labels
-    # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Example training loop with early stopping
-    best_val_loss = float('inf')
-    early_stop_count = 0
-    for epoch in range(num_epochs):
-        # Training
-        model.train()
-        # Implement your training steps here using DataLoader or batches
-
-        # Validation
-        model.eval()
-        # Implement your validation steps here using DataLoader or batches
-        # Calculate validation loss and other metrics
-        val_loss = 0
-
-        # Example early stopping based on validation loss
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            early_stop_count = 0
-            # Save the best model if needed
-            # torch.save(model.state_dict(), 'best_model.pt')
-        else:
-            early_stop_count += 1
-            if early_stop_count >= early_stop_patience:
-                print(f"Early stopping at epoch {epoch}. Best validation loss: {best_val_loss}")
-                break
-
+    return model, criterion

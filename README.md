@@ -61,7 +61,7 @@ To download a data sample
 ./downloader.sh
 ```
 
-The dataset contains multimodal (visual, depth, infrared, eye tracking, and auditory) sensing of human affects grouped by human participant's index. *Annotations.xlsx* contains labelled disengagement events for all data samples.
+The dataset contains multimodal (visual, depth, infrared, eye tracking, and auditory) sensing of human affects grouped by anonymized and randomized participant's index. *Annotations.xlsx* contains labelled disengagement events for all data samples.
 
 To load the dataset as a *pandas DataFrame* and resample the multimodal data in a synchronised fasion
 

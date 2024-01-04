@@ -6,32 +6,59 @@ import pickle
 
 
 class WALIHRIDataset(Dataset):
-    def __init__(self, data, tau=3, freq=0.2):
+    def __init__(self, data,
+                 else_samp=['GBSIOT_07B', 'GBSIOT07D'],  # specify sample Key other than current split
+                 tau=3, freq=0.2):
         self.data = data
-        # TODO: discuss data by sample_id ('GBSIOT_XX') and sampling idx
-
         self.sequence_length = int(tau / freq) + 1
 
+        # TODO: discuss data by sample_id ('GBSIOT_XX') and sampling idx
+        train_sequences = []
+        train_y = []
+        for index, (key, val) in enumerate(self.data.items()):
+            if key in else_samp:
+                continue
+
+            else:
+                # col No. 16 is Annotation
+                feats_col = val.iloc[:, np.r_[2:16, 17:]]
+                feats = val[feats_col].values
+                for i in range(len(feats) - self.sequence_length + 1):
+                    sequence = feats[i:i + self.sequence_length + 1]
+                    train_sequences.append(sequence)
+
+                    train_y.append(val.iloc[self.sequence_length:, 16:17])
+
+        assert len(train_sequences) == len(train_y)
+
+        # TODO: deal with NaN data
+        # Shape of X: (num_sequences, sequence_length, num_features)
+        self.X = np.array(train_sequences)
+        # Shape of Y: (num_sequences, num_features)
+        self.Y = np.array(train_y)
+
     def __len__(self):
-        return len(self.data)
+        return self.X.shape[0]
 
     def __getitem__(self, idx):
-        x = self.data[idx:idx+self.sequence_length, 1:]  # Assuming features start from column index 1
-        y = self.data[idx+self.sequence_length, 1:]     # Assuming features start from column index 1
-        return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+        x = torch.tensor(self.X[idx], dtype=torch.float32)
+        y = torch.tensor(self.Y[idx], dtype=torch.float32)
+        return x, y
 
 
-if __name__=="__main__":
+def build_data_loader():
     exported_pkl = './data_pkl.pkl'
 
     with open(exported_pkl, 'rb') as handle:
         my_data = pickle.load(handle)
 
-    dataset = WALIHRIDataset(my_data)
+    train_dataset = WALIHRIDataset(my_data)
+    #val_dataset = WALIHRIDataset(my_data, else_samp=[])  # specify Excluded samples
+    #test_dataset = WALIHRIDataset(my_data, else_samp=[])
 
-    # Assuming you have a 'class_label' column in your DataFrame indicating classes
-    # You can calculate class weights for WeightedRandomSampler
-    class_labels = my_data['class_label']  # Replace 'class_label' with your actual class column name
+    # Allow class-balancing in sampling with WeightedRandomSampler
+    class_labels = train_dataset.Y[:, 0]
+    # t should be 0 / 1
     class_sample_count = np.array([len(np.where(class_labels == t)[0]) for t in np.unique(class_labels)])
     class_weights = 1.0 / class_sample_count
     weights = class_weights[class_labels]
@@ -41,11 +68,6 @@ if __name__=="__main__":
 
     # Define batch size and create a DataLoader using the sampler
     batch_size = 64
-    data_loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
+    data_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler)
 
-    # Accessing the data using the DataLoader
-    for idx, (inputs, targets) in enumerate(data_loader):
-        # inputs and targets will contain batches of sequences and corresponding targets
-        # Shape of inputs: (batch_size, sequence_length, num_features)
-        # Shape of targets: (batch_size, num_features)
-        pass
+    return data_loader
