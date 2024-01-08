@@ -8,7 +8,7 @@ from math import pi
 
 class WALIHRIDataset(Dataset):
     def __init__(self, data,
-                 else_samp=['GBSIOT_07B', 'GBSIOT07D'],  # specify sample Key other than current split
+                 samp_list,  # specify sample Key other than current split
                  tau=5, freq=0.2):
         self.data = data
         self.sequence_length = int(tau / freq) + 1
@@ -20,7 +20,7 @@ class WALIHRIDataset(Dataset):
         train_y = []
 
         for index, (key, val) in enumerate(self.data.items()):
-            if key in else_samp:
+            if key not in samp_list:
                 continue
 
             else:
@@ -40,13 +40,15 @@ class WALIHRIDataset(Dataset):
                 ### 3. Sequence Zero-padding ###
                 # select only sequences with a non-NaN y label, and allow self.sequence_length without padding
                 for i in range(len(feats) - self.sequence_length):
+
                     labels = val.iloc[i:i + self.sequence_length, val.columns.get_loc('annotation')]
                     labels.fillna(0, inplace=True)
                     # skip samples with 'NaN' annotation
                     if labels.isnull().values.any():
                         continue
 
-                    train_y.append(labels)
+                    # get only the last timestamp's annotation as Label
+                    train_y.append(labels[-1])
 
                     sequence = feats[i:i + self.sequence_length]
                     train_sequences.append(sequence)
@@ -58,7 +60,7 @@ class WALIHRIDataset(Dataset):
         # Shape of X: (num_sequences, sequence_length, num_features)
         self.X = np.array(train_sequences)
         # Shape of Y: (num_sequences, sequence_length, labels)
-        self.Y = np.expand_dims(np.array(train_y), axis=2)
+        self.Y = np.expand_dims(np.array(train_y), axis=1)
 
     def normalise(self, df):
         df = df - self.data_mean
@@ -112,18 +114,45 @@ class WALIHRIDataset(Dataset):
         return x, y
 
 
-def build_data_loader():
-    exported_pkl = './data_pkl.pkl'
+def build_data_loader(config, ctype=None):
+    exported_pkl = config['data']['pkl_name']
 
     with open(exported_pkl, 'rb') as handle:
         my_data = pickle.load(handle)
 
+    if ctype is None:
+        else_lst = list(my_data.keys())
+        for x in list(my_data.keys()):
+            for sample in config['data']['val_samples'] + config['data']['test_samples']:
+                if sample in x:
+                    else_lst.remove(x)
+                    break
 
-    train_dataset = WALIHRIDataset(my_data)
-    #val_dataset = WALIHRIDataset(my_data, else_samp=[])  # specify Excluded samples
-    #test_dataset = WALIHRIDataset(my_data, else_samp=[])
+        train_dataset = WALIHRIDataset(my_data, else_lst)
+    elif ctype == 'val':
+        else_lst = []
+        for x in list(my_data.keys()):
+            for sample in config['data']['val_samples']:
+                if sample in x:
+                    else_lst.append(x)
+                    break
+
+        train_dataset = WALIHRIDataset(my_data, else_lst)  # specify Excluded samples
+    elif ctype == 'test':
+        else_lst = []
+        for x in list(my_data.keys()):
+            for sample in config['data']['test_samples']:
+                if sample in x:
+                    else_lst.append(x)
+                    break
+
+        train_dataset = WALIHRIDataset(my_data, else_lst)
+    else:
+        raise TypeError("Illegal split")
+
 
     #print(train_dataset.X, train_dataset.Y)
+    print("\nSplit shape: ")
     print(train_dataset.X.shape, train_dataset.Y.shape)
 
     # Allow class-balancing in sampling with WeightedRandomSampler
@@ -133,14 +162,14 @@ def build_data_loader():
     #print(class_labels, class_sample_count)
 
     class_weights = 1.0 / class_sample_count
-    print(class_sample_count, class_weights)
+    #print(class_sample_count, class_weights)
 
     # Create a WeightedRandomSampler to ensure balanced class distribution
     sampler = WeightedRandomSampler([0.5, 0.5], round(0.9 * sum(class_sample_count)), replacement=True)
-    print(list(sampler)[:100])
+    #print(list(sampler)[:100])
 
     # Define batch size and create a DataLoader using the sampler
-    batch_size = 64
+    batch_size = config['training']['batch_size']
     data_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler)
 
     return data_loader

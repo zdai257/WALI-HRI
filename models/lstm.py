@@ -22,11 +22,20 @@ class LSTM1(nn.Module):
         return out
 
 
-def build_lstm():
+def build_lstm(config):
 
     # Initialize the LSTM model
-    model = LSTM1()
+    if config['model']['name'] == "LSTM1":
+        model = LSTM1(input_dim=config['model']['input_dim'],
+                      hidden_dim1=config['model']['hidden_dim1'],
+                      hidden_dim2=config['model']['hidden_dim2'],
+                      dropout_prob=config['model']['dropout_prob']
+                      )
+
+    else:
+        raise NameError("Does not support this model name!")
     #print(model)
 
     criterion = nn.BCEWithLogitsLoss()  # Binary cross-entropy loss for binary classification
+
     return model, criterion
