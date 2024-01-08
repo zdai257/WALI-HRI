@@ -3,39 +3,105 @@ from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 import pandas as pd
 import numpy as np
 import pickle
+from math import pi
 
 
 class WALIHRIDataset(Dataset):
     def __init__(self, data,
                  else_samp=['GBSIOT_07B', 'GBSIOT07D'],  # specify sample Key other than current split
-                 tau=3, freq=0.2):
+                 tau=5, freq=0.2):
         self.data = data
         self.sequence_length = int(tau / freq) + 1
 
-        # TODO: discuss data by sample_id ('GBSIOT_XX') and sampling idx
+        self.data_mean, self.data_sd = self.get_mean_sd()
+
+        # discuss data by sample_id ('GBSIOT_XX') and sampling idx
         train_sequences = []
         train_y = []
+
         for index, (key, val) in enumerate(self.data.items()):
             if key in else_samp:
                 continue
 
             else:
-                # col No. 16 is Annotation
-                feats_col = val.iloc[:, np.r_[2:16, 17:]]
-                feats = val[feats_col].values
-                for i in range(len(feats) - self.sequence_length + 1):
-                    sequence = feats[i:i + self.sequence_length + 1]
+
+                # col No. 16 is "annotation", No. 0 is "timestamp"
+                #feats_col = val.iloc[:, np.r_[2:16, 17:]]
+
+                feats_cols = val.drop(columns=['annotation', 'timestamp'])
+                ### 1. Normalise ###
+                feats_cols = self.normalise(feats_cols)
+
+                ### 2. fill NaN with 0s ###
+                feats_cols.fillna(0, inplace=True)
+
+                feats = feats_cols.values  # .to_numpy()
+
+                ### 3. Sequence Zero-padding ###
+                # select only sequences with a non-NaN y label, and allow self.sequence_length without padding
+                for i in range(len(feats) - self.sequence_length):
+                    labels = val.iloc[i:i + self.sequence_length, val.columns.get_loc('annotation')]
+                    labels.fillna(0, inplace=True)
+                    # skip samples with 'NaN' annotation
+                    if labels.isnull().values.any():
+                        continue
+
+                    train_y.append(labels)
+
+                    sequence = feats[i:i + self.sequence_length]
                     train_sequences.append(sequence)
 
-                    train_y.append(val.iloc[self.sequence_length:, 16:17])
+                    #train_y.append(val.iloc[self.sequence_length:, val.columns.get_loc('annotation')])
 
         assert len(train_sequences) == len(train_y)
 
-        # TODO: deal with NaN data
         # Shape of X: (num_sequences, sequence_length, num_features)
         self.X = np.array(train_sequences)
-        # Shape of Y: (num_sequences, num_features)
-        self.Y = np.array(train_y)
+        # Shape of Y: (num_sequences, sequence_length, labels)
+        self.Y = np.expand_dims(np.array(train_y), axis=2)
+
+    def normalise(self, df):
+        df = df - self.data_mean
+        return df / (self.data_sd + 1e-12)
+
+    def get_mean_sd(self):
+        whole_data = pd.concat(list(self.data.values()), axis=0)
+        whole_mean = whole_data.mean()
+        whole_sd = whole_data.std()
+        whole_max = whole_data.max()
+        whole_min = whole_data.min()
+        #print(whole_mean, whole_sd)
+        # Manually set Nomalise scale
+        whole_mean['rotation_x'] = 0.
+        whole_mean['rotation_y'] = 0.
+        whole_mean['rotation_z'] = 0.
+        whole_sd['rotation_x'] = pi/2
+        whole_sd['rotation_y'] = pi/2
+        whole_sd['rotation_z'] = pi/2
+        whole_mean['pitch'] = 0.
+        whole_mean['yaw'] = 0.
+        whole_mean['roll'] = 0.
+        whole_sd['pitch'] = 90.
+        whole_sd['yaw'] = 90.
+        whole_sd['roll'] = 90.
+        whole_mean['norm_pos_x'] = 0.5
+        whole_mean['norm_pos_y'] = 0.5
+        whole_mean['fixa_conf'] = 0.5
+        whole_mean['blink_conf'] = 0.5
+        whole_mean['in_surface'] = 0.5
+        whole_sd['norm_pos_x'] = 0.25
+        whole_sd['norm_pos_y'] = 0.25
+        whole_sd['fixa_conf'] = 0.5
+        whole_sd['blink_conf'] = 0.5
+        whole_sd['in_surface'] = 0.5
+        # Mels
+        #print(whole_mean.index)
+        for col in list(whole_mean.index):
+            if col.startswith('mel'):
+                whole_mean[col] = -80.
+                whole_sd[col] = 40.
+
+        return whole_mean.drop(labels=['annotation', 'timestamp']), whole_sd.drop(labels=['annotation', 'timestamp'])
 
     def __len__(self):
         return self.X.shape[0]
@@ -52,19 +118,26 @@ def build_data_loader():
     with open(exported_pkl, 'rb') as handle:
         my_data = pickle.load(handle)
 
+
     train_dataset = WALIHRIDataset(my_data)
     #val_dataset = WALIHRIDataset(my_data, else_samp=[])  # specify Excluded samples
     #test_dataset = WALIHRIDataset(my_data, else_samp=[])
 
+    #print(train_dataset.X, train_dataset.Y)
+    print(train_dataset.X.shape, train_dataset.Y.shape)
+
     # Allow class-balancing in sampling with WeightedRandomSampler
-    class_labels = train_dataset.Y[:, 0]
+    class_labels = train_dataset.Y[:, -1]
     # t should be 0 / 1
     class_sample_count = np.array([len(np.where(class_labels == t)[0]) for t in np.unique(class_labels)])
+    #print(class_labels, class_sample_count)
+
     class_weights = 1.0 / class_sample_count
-    weights = class_weights[class_labels]
+    print(class_sample_count, class_weights)
 
     # Create a WeightedRandomSampler to ensure balanced class distribution
-    sampler = WeightedRandomSampler(weights, len(weights))
+    sampler = WeightedRandomSampler([0.5, 0.5], round(0.9 * sum(class_sample_count)), replacement=True)
+    print(list(sampler)[:100])
 
     # Define batch size and create a DataLoader using the sampler
     batch_size = 64
