@@ -3,6 +3,7 @@ import yaml
 import torch
 import numpy as np
 from torch.optim import RMSprop, Adam, AdamW
+from torch.optim.lr_scheduler import StepLR
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import tqdm
@@ -15,7 +16,7 @@ def main():
     with open('configuration.yaml', 'r') as file:
         config = yaml.safe_load(file)
 
-    # TODO lr scheduler
+    # load config
     lr = config['optimizer']['lr']
     num_epochs = config['training']['epochs']
     early_stop_patience = config['training']['early_stop_patience']
@@ -30,6 +31,11 @@ def main():
         optimizer = AdamW(model.parameters(), lr=lr)
     else:
         raise TypeError("Optimizer not supported!")
+
+    # Define a linear learning rate scheduler
+    lr_step_size = config['optimizer']['lr_step_size']
+    gamma = config['optimizer']['gamma']  # Factor by which the learning rate will be reduced
+    scheduler = StepLR(optimizer, step_size=lr_step_size, gamma=gamma)
 
     train_loader = build_data_loader(config)
     val_loader = build_data_loader(config, 'val')
@@ -99,6 +105,8 @@ def main():
             if early_stop_count >= early_stop_patience:
                 print(f"Early stopping at epoch {epoch}. Best validation loss: {best_val_loss}")
                 break
+
+        scheduler.step()
 
 
 if __name__ == "__main__":

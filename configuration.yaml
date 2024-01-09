@@ -17,12 +17,13 @@ model:
 
 optimizer:
   name: "RMSprop"
-  lr: 0.0001
-  momentum: 0.9
+  lr: 0.001
+  lr_step_size: 5
+  gamma: 0.2
 
 training:
   batch_size: 16
-  epochs: 20
+  epochs: 30
   early_stop_patience: 5
   saved_dir: "./checkpoints"
-  saved_best_model: "best_model.pth"
+  saved_best_model: "best_model2.pth"

@@ -163,7 +163,7 @@ def build_data_loader(config, ctype=None):
 
     class_weights = 1.0 / class_sample_count
     weights = class_weights[list(int(x) for x in class_labels)]
-    print(weights, class_weights)
+    #print(weights, class_weights)
 
     # Create a WeightedRandomSampler to ensure balanced class distribution
     sampler = WeightedRandomSampler(weights, len(weights), replacement=True)

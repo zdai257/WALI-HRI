@@ -21,7 +21,9 @@ class LSTM1(nn.Module):
         out = self.dropout2(out)
         out = self.fc1(out[:, -1, :])  # Taking the last output sequence for classification
         #out = self.fc2(out)
+
         # Sigmoid activation is not needed with BCEWithLogitsLoss
+        # TODO try output layer without FCs but Softmax activation
         #out = torch.sigmoid(out)
         return out
 
