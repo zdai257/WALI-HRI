@@ -4,7 +4,7 @@ import torch
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score, roc_curve, auc, roc_auc_score
+from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_recall_curve, average_precision_score
 from models.data_loader import build_data_loader
 from models.lstm import build_lstm
 from Evaluation import *
@@ -59,6 +59,7 @@ def test():
 
     print("Inference mean latency = %.02f ms" % (sum(elapsed_time)/len(elapsed_time) * 1000))
 
+    ### METRICS ###
     print(gts[:20], preds[:20])
     # aggregate
     tp, fp, fn = calculate_binary_classifier(gts, preds)
@@ -76,17 +77,33 @@ def test():
     roc_auc = auc(FPr, TPr)
     print("AUC = {}".format(roc_auc))
 
-    # Plotting the ROC curve
-    plt.figure(figsize=(8, 6))
-    plt.plot(FPr, TPr, color='blue', lw=2, label='ROC curve (AUC = %0.2f)' % roc_auc)
-    plt.plot([0, 1], [0, 1], color='red', linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
-    plt.legend(loc='lower right')
+    # Calculate precision and recall
+    Precision, Recall, _ = precision_recall_curve(gts, preds)
 
+    # Calculate the area under the precision-recall curve (AUC-PR)
+    auc_pr = average_precision_score(gts, preds)
+    print("Precision-Recall Curve = {}".format(auc_pr))
+
+    # Plotting the ROC curves
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+    ax1.plot(FPr, TPr, color='blue', lw=2, label='ROC curve (AUC = %0.2f)' % roc_auc)
+    ax1.plot([0, 1], [0, 1], color='red', linestyle='--')
+    ax1.set_xlim([0.0, 1.0])
+    ax1.set_ylim([0.0, 1.05])
+    ax1.set_xlabel('False Positive Rate')
+    ax1.set_ylabel('True Positive Rate')
+    ax1.set_title('Receiver Operating Characteristic (ROC) Curve')
+    ax1.legend(loc='lower right')
+
+    # Plotting the Precision-Recall curve
+    ax2.plot(Recall, Precision, color='green', lw=2, label='Precision-Recall curve (AUC-PR = %0.2f)' % auc_pr)
+    ax2.set_xlabel('Recall')
+    ax2.set_ylabel('Precision')
+    ax2.set_title('Precision-Recall Curve')
+    ax2.legend(loc='lower left')
+
+    plt.tight_layout()
     plt.savefig(os.path.join('./imgs', 'roc_curve2.pdf'), bbox_inches='tight')
     plt.show()
 
