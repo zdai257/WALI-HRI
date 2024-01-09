@@ -8,19 +8,20 @@ data:
 model:
   name: "LSTM1"
   num_layers: None
-  seq_length_s: 5
+  seq_length_s: 3
   input_dim: 54
   hidden_dim1: 32
   hidden_dim2: 2
+  #hidden_dim3: 0
   dropout_prob: 0.1
 
 optimizer:
   name: "RMSprop"
-  lr: 0.0003
+  lr: 0.0001
   momentum: 0.9
 
 training:
-  batch_size: 64
+  batch_size: 16
   epochs: 20
   early_stop_patience: 5
   saved_dir: "./checkpoints"

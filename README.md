@@ -6,7 +6,7 @@ This repository presents WALI-HRI dataset, with fully annotated
 disengagement/distraction events, collected in an industrial phone assembly scenario 
 of human-robot collaboration. Multimodal sensing streams of 28 
 human participant's attention tracking are made publicly available. The aim is to 
-endow perception and cognitive safety capabilities for intellgent robots and 
+endow perception and cognitive safety capabilities for intelligent robots and 
 autonomous systems.
 
 For details, please read and cite our paper:
@@ -18,9 +18,23 @@ Aleksandra and Li, Chen},
   journal={arXiv}, 
   title={WALI-HRI}, 
   year={2024},
-  volume={1},
+  volume={},
   number={},
-  pages={1-7}}
+  pages={1-8}}
+```
+
+AND
+
+```
+@INPROCEEDINGS{dai_icac2023,
+  author={Dai, Zhuangzhuang and Park, Jinha and Kaszowska, Aleksandra and Li, Chen},
+  booktitle={IEEE 28th International Conference on Automation and Computing (ICAC)}, 
+  title={Detecting Worker Attention Lapses in Human-Robot Interaction: An Eye Tracking and Multimodal Sensing Study}, 
+  year={2023},
+  volume={},
+  number={},
+  pages={558-563},
+  doi={10.1109/icac57885.2023.10275177}}
 ```
 
 ------
@@ -42,14 +56,14 @@ Auditory Recording | Speech, Ambient Sound | `sound_recording.wav`
 
 ### Pre-requisites
 
-To reproduce synchronised recorder and environment for running Pupil eye tracker
+To reproduce the dataset pre-processor, data loader, and training pipeline
 
 ```bash
 # Install System Requirements with Conda
 conda create --name <env_name> --file requirements.txt
 ```
 
-If only to use the dataset, you do not need to recreate the environment.
+If only to download the dataset, you do not need to recreate the environment.
 
 ### Usage
 
@@ -63,13 +77,19 @@ To download a data sample
 
 The dataset contains multimodal (visual, depth, infrared, eye tracking, and auditory) sensing of human affects grouped by anonymized and randomized participant's index. *Annotations.xlsx* contains labelled disengagement events for all data samples.
 
-To load the dataset as a *pandas DataFrame* and resample the multimodal data in a synchronised fasion
+To load the dataset as a *pandas DataFrame* and resample the multimodal data in a synchronised fashion
 
 ```base
 python3 preprocess.py --type csv
 ```
 
-or directly load the pre-processed *data_pkl.pkl* pickle file. Note you need *python=3.11* and *pandas=1.5.3* to load the pickle file directly.
+or directly load the pre-processed *data_pkl.pkl* pickle file. Note you need *python=3.11* and *pandas=1.5.3* to load the pickle file directly. Neural network training requires *pytorch=1.13.1* with hyperparams stored in *configuration.yaml*
+
+```base
+python3 train.py
+```
+
+------
 
 ### Data Collection Pipeline
 

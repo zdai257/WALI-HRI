@@ -2,7 +2,7 @@ import os
 import yaml
 import torch
 import numpy as np
-from torch.optim import RMSprop
+from torch.optim import RMSprop, Adam, AdamW
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import tqdm
@@ -15,13 +15,21 @@ def main():
     with open('configuration.yaml', 'r') as file:
         config = yaml.safe_load(file)
 
+    # TODO lr scheduler
     lr = config['optimizer']['lr']
     num_epochs = config['training']['epochs']
     early_stop_patience = config['training']['early_stop_patience']
 
     model, criteria = build_lstm(config)
 
-    optimizer = RMSprop(model.parameters(), lr=lr)
+    if config['optimizer']['name'] == 'RMSprop':
+        optimizer = RMSprop(model.parameters(), lr=lr)
+    elif config['optimizer']['name'] == 'Adam':
+        optimizer = Adam(model.parameters(), lr=lr)
+    elif config['optimizer']['name'] == 'AdamW':
+        optimizer = AdamW(model.parameters(), lr=lr)
+    else:
+        raise TypeError("Optimizer not supported!")
 
     train_loader = build_data_loader(config)
     val_loader = build_data_loader(config, 'val')
@@ -80,7 +88,7 @@ def main():
 
         # Example early stopping based on validation loss
         if val_loss < best_val_loss:
-            best_val_loss = val_loss
+            best_val_loss = val_loss / val_total
             early_stop_count = 0
             # Save the best model if needed
             if not os.path.exists(config['training']['saved_dir']):

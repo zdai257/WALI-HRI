@@ -128,7 +128,7 @@ def build_data_loader(config, ctype=None):
                     else_lst.remove(x)
                     break
 
-        train_dataset = WALIHRIDataset(my_data, else_lst)
+        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'])
     elif ctype == 'val':
         else_lst = []
         for x in list(my_data.keys()):
@@ -137,7 +137,7 @@ def build_data_loader(config, ctype=None):
                     else_lst.append(x)
                     break
 
-        train_dataset = WALIHRIDataset(my_data, else_lst)  # specify Excluded samples
+        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'])
     elif ctype == 'test':
         else_lst = []
         for x in list(my_data.keys()):
@@ -146,7 +146,7 @@ def build_data_loader(config, ctype=None):
                     else_lst.append(x)
                     break
 
-        train_dataset = WALIHRIDataset(my_data, else_lst)
+        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'])
     else:
         raise TypeError("Illegal split")
 
@@ -162,14 +162,19 @@ def build_data_loader(config, ctype=None):
     #print(class_labels, class_sample_count)
 
     class_weights = 1.0 / class_sample_count
-    #print(class_sample_count, class_weights)
+    weights = class_weights[list(int(x) for x in class_labels)]
+    print(weights, class_weights)
 
     # Create a WeightedRandomSampler to ensure balanced class distribution
-    sampler = WeightedRandomSampler([0.5, 0.5], round(0.9 * sum(class_sample_count)), replacement=True)
+    sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
     #print(list(sampler)[:100])
 
     # Define batch size and create a DataLoader using the sampler
-    batch_size = config['training']['batch_size']
-    data_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler)
+    if ctype == 'test':
+        batch_size = 1
+        data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, sampler=None)
+    else:
+        batch_size = config['training']['batch_size']
+        data_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler)
 
     return data_loader
