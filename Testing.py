@@ -3,6 +3,7 @@ import yaml
 import torch
 import time
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_recall_curve, average_precision_score
 from models.data_loader import build_data_loader
@@ -87,20 +88,23 @@ def test():
     # Plotting the ROC curves
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-    ax1.plot(FPr, TPr, color='blue', lw=2, label='ROC curve (AUC = %0.2f)' % roc_auc)
+    font = {'size': 16}
+    matplotlib.rc('font', **font)
+
+    ax1.plot(FPr, TPr, color='blue', lw=2, label='AUC = %0.2f' % roc_auc)
     ax1.plot([0, 1], [0, 1], color='red', linestyle='--')
     ax1.set_xlim([0.0, 1.0])
     ax1.set_ylim([0.0, 1.05])
-    ax1.set_xlabel('False Positive Rate')
-    ax1.set_ylabel('True Positive Rate')
-    ax1.set_title('Receiver Operating Characteristic (ROC) Curve')
+    ax1.set_xlabel('False Positive Rate', fontsize=16)
+    ax1.set_ylabel('True Positive Rate', fontsize=16)
+    ax1.set_title('ROC Curve', fontsize=19)
     ax1.legend(loc='lower right')
 
     # Plotting the Precision-Recall curve
-    ax2.plot(Recall, Precision, color='green', lw=2, label='Precision-Recall curve (AUC-PR = %0.2f)' % auc_pr)
-    ax2.set_xlabel('Recall')
-    ax2.set_ylabel('Precision')
-    ax2.set_title('Precision-Recall Curve')
+    ax2.plot(Recall, Precision, color='green', lw=2, label='AUC-PR = %0.2f' % auc_pr)
+    ax2.set_xlabel('Recall', fontsize=16)
+    ax2.set_ylabel('Precision', fontsize=16)
+    ax2.set_title('Precision-Recall Curve', fontsize=19)
     ax2.legend(loc='lower left')
 
     plt.tight_layout()

@@ -22,7 +22,7 @@ optimizer:
   gamma: 0.2
 
 training:
-  batch_size: 16
+  batch_size: 128
   epochs: 30
   early_stop_patience: 5
   saved_dir: "./checkpoints"
