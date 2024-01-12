@@ -35,6 +35,8 @@ def test():
 
     model = torch.load(os.path.join(model_dir, model_file))
 
+    test_num = model_file.split('.')[0][-1]
+
     model.eval()
 
     # Load test data_loader
@@ -54,9 +56,9 @@ def test():
         elapsed_time.append(time.time() - start_time)
         #print("Out shape: ", pred.shape)
         #print(pred, targets)
-        preds.append(float(torch.sigmoid(pred[0][0]).detach()))
+        preds.append(float(torch.sigmoid(pred[0][-1][0]).detach()))
 
-        gts.append(float(targets[0][0].detach()))
+        gts.append(float(targets[0][-1][0].detach()))
 
     print("Inference mean latency = %.02f ms" % (sum(elapsed_time)/len(elapsed_time) * 1000))
 
@@ -108,7 +110,7 @@ def test():
     ax2.legend(loc='lower left')
 
     plt.tight_layout()
-    plt.savefig(os.path.join('./imgs', 'roc_curve2.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join('./imgs', 'roc_curve{}.pdf'.format(test_num)), bbox_inches='tight')
     plt.show()
 
 

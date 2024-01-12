@@ -48,7 +48,9 @@ class WALIHRIDataset(Dataset):
                         continue
 
                     # get only the last timestamp's annotation as Label
-                    train_y.append(labels[-1])
+                    #train_y.append(labels[-1])
+                    # get all timestamps' outputs
+                    train_y.append(labels)
 
                     sequence = feats[i:i + self.sequence_length]
                     train_sequences.append(sequence)
@@ -60,7 +62,7 @@ class WALIHRIDataset(Dataset):
         # Shape of X: (num_sequences, sequence_length, num_features)
         self.X = np.array(train_sequences)
         # Shape of Y: (num_sequences, sequence_length, labels)
-        self.Y = np.expand_dims(np.array(train_y), axis=1)
+        self.Y = np.expand_dims(np.array(train_y), axis=2)
 
     def normalise(self, df):
         df = df - self.data_mean
@@ -128,7 +130,8 @@ def build_data_loader(config, ctype=None):
                     else_lst.remove(x)
                     break
 
-        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'])
+        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
+                                       freq=config['model']['samp_interval_s'])
     elif ctype == 'val':
         else_lst = []
         for x in list(my_data.keys()):
@@ -137,7 +140,8 @@ def build_data_loader(config, ctype=None):
                     else_lst.append(x)
                     break
 
-        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'])
+        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
+                                       freq=config['model']['samp_interval_s'])
     elif ctype == 'test':
         else_lst = []
         for x in list(my_data.keys()):
@@ -146,7 +150,8 @@ def build_data_loader(config, ctype=None):
                     else_lst.append(x)
                     break
 
-        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'])
+        train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
+                                       freq=config['model']['samp_interval_s'])
     else:
         raise TypeError("Illegal split")
 
@@ -156,7 +161,7 @@ def build_data_loader(config, ctype=None):
     print(train_dataset.X.shape, train_dataset.Y.shape)
 
     # Allow class-balancing in sampling with WeightedRandomSampler
-    class_labels = train_dataset.Y[:, -1]
+    class_labels = train_dataset.Y[:, -1, 0]
     # t should be 0 / 1
     class_sample_count = np.array([len(np.where(class_labels == t)[0]) for t in np.unique(class_labels)])
     #print(class_labels, class_sample_count)

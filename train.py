@@ -41,6 +41,20 @@ def main():
     val_loader = build_data_loader(config, 'val')
     #test_loader = build_data_loader(config, 'test')
 
+    seq_length = int(config['model']['seq_length_s'] / config['model']['samp_interval_s']) + 1
+
+    # Custom loss function considering weights of all timesteps
+    if config['training']['custom_weighted_loss'] == "softmax":
+        seq_weights = torch.arange(seq_length, dtype=torch.float32)
+        m = torch.nn.Softmax(dim=0)
+        seq_weights = m(seq_weights)
+    elif config['training']['custom_weighted_loss'] == "linear":
+        seq_weights = torch.arange(seq_length, dtype=torch.float32)
+        seq_weights = seq_weights / torch.sum(seq_weights)
+    else:
+        raise TypeError("Custom weighted loss type incorrect!")
+    #print(seq_weights)
+
     best_val_loss = float('inf')
     early_stop_count = 0
 
@@ -52,15 +66,23 @@ def main():
 
         with tqdm.tqdm(total=total) as pbar:
             # Shape of inputs: (batch_size, sequence_length, num_features)
-            # Shape of targets: (batch_size, sequence_length, binary_label)
+            # Shape of targets: (batch_size, sequence_length, 1)
             for idx, (inputs, targets) in enumerate(train_loader):
                 model.train()
                 criteria.train()
 
                 pred = model(inputs)
 
-                loss = criteria(pred, targets)
-                # print("Out shape: ", pred.shape)
+                #print("Out shape: ", pred.shape)
+
+                # discuss if Loss func considers all timesteps or not
+                if config['training']['is_only_last_timestep'] == "true":
+                    loss = criteria(pred[:, -1], targets[:, -1])
+                else:
+                    loss = 0
+                    for i in range(seq_length):
+                        loss += criteria(pred[:, i, :], targets[:, i, :]) * seq_weights[i]
+
                 loss_value = loss.item()
                 epoch_loss += loss_value
 
@@ -86,14 +108,21 @@ def main():
 
                     val_pred = model(inputs)
 
-                    loss = criteria(val_pred, targets)
+                    # discuss if Loss func considers all timesteps or not
+                    if config['training']['is_only_last_timestep'] == "true":
+                        loss = criteria(val_pred[:, -1], targets[:, -1])
+                    else:
+                        loss = 0
+                        for i in range(seq_length):
+                            loss += criteria(val_pred[:, i, :], targets[:, i, :]) * seq_weights[i]
+
                     val_loss += loss.item()
                     pbar.update(1)
 
             print("Validation loss: ", val_loss / val_total)
 
         # Example early stopping based on validation loss
-        if val_loss < best_val_loss:
+        if val_loss / val_total < best_val_loss:
             best_val_loss = val_loss / val_total
             early_stop_count = 0
             # Save the best model if needed

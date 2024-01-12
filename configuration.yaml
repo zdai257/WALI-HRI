@@ -8,7 +8,8 @@ data:
 model:
   name: "LSTM1"
   num_layers: None
-  seq_length_s: 3
+  seq_length_s: 5
+  samp_interval_s: 0.2
   input_dim: 54
   hidden_dim1: 32
   hidden_dim2: 2
@@ -22,8 +23,10 @@ optimizer:
   gamma: 0.2
 
 training:
-  batch_size: 128
+  batch_size: 64
   epochs: 30
   early_stop_patience: 5
   saved_dir: "./checkpoints"
-  saved_best_model: "best_model2.pth"
+  saved_best_model: "best_model4.pth"
+  is_only_last_timestep: false
+  custom_weighted_loss: "linear"  # "linear" or "softmax"
