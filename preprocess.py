@@ -15,17 +15,18 @@ import librosa
 
 # Data loader class #
 class Preprocessor(object):
-    def __init__(self, sheets_to_load=None, src_dir=None,
+    def __init__(self, sheets_to_load=None, src_dir=None, sampling_interval=200,
                  pupil_lst=["fixations.csv", "blinks.csv", "head_pose_tracker_poses.csv", "surface_events.csv", "sound_recording", "Annotations.xlsx"]):
         if sheets_to_load is not None:
             assert isinstance(sheets_to_load, list)
             self.sheets_to_load = sheets_to_load
         else:
             self.sheets_to_load = [item for item in os.listdir(src_dir) if not item.startswith('.')]
-
-        self.freq = '200ms'
-        self.BLINK_CONF_THRES = 0.3
-        self.FIXATION_CONF_THRES = 0.7
+            
+        assert isinstance(sampling_interval, int)
+        self.freq = str(sampling_interval) + 'ms'
+        self.BLINK_CONF_THRES = 0.0
+        self.FIXATION_CONF_THRES = 0.0
         self.src_dir = src_dir
         # Annotations
         #self.anno_dict = pd.read_excel("./Annotations.xlsx", sheet_name=sheets_to_load)
@@ -223,6 +224,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--type', type=str, default='csv', choices=['csv', 'pkl'], required=False, help='specify pre-processed data format: "csv" or "pkl"')
+    parser.add_argument('--samp', type=int, default='200', required=False, help='specify sampling interval in "ms"')
 
     args = parser.parse_args()
 
@@ -240,7 +242,7 @@ if __name__ == "__main__":
             prep.data[k].to_csv(join(csv_dir, k + ".csv"))
 
     elif OUTPUT_TYPE == "pkl":
-        exported_pkl = './data_pkl.pkl'
+        exported_pkl = './data_pkl-{}ms.pkl'.format(str(args.samp))
 
         if os.path.isfile(exported_pkl):
             with open(exported_pkl, 'rb') as handle:
