@@ -1,7 +1,7 @@
 # configuration.yaml
 
 data:
-  pkl_name: './data_pkl.pkl'
+  pkl_name: './data_pkl.pkl'  # data_pkl.pkl or data_pkl-100ms.pkl
   val_samples: ['02', '07']
   test_samples: ['08', '13', '15', '22', '28']
 
@@ -9,7 +9,7 @@ model:
   name: "LSTM1"
   num_layers: None
   seq_length_s: 5
-  samp_interval_s: 0.2
+  samp_interval_s: 0.2  # 0.1 or 0.2
   input_dim: 54
   hidden_dim1: 32
   hidden_dim2: 2
@@ -19,8 +19,8 @@ model:
 optimizer:
   name: "RMSprop"
   lr: 0.001
-  lr_step_size: 5
-  gamma: 0.2
+  lr_step_size: 10
+  gamma: 0.1
 
 training:
   batch_size: 64
