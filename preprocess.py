@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
     if OUTPUT_TYPE == "csv":
         # output two sample .csv for example
-        prep = Preprocessor(sheets_to_load=['GBSIOT_07B', 'GBSIOT_07D'], src_dir=data_dir)
+        prep = Preprocessor(sheets_to_load=['GBSIOT_07B', 'GBSIOT_07D'], src_dir=data_dir, sampling_interval=args.samp)
 
         for k, v in prep.data.items():
             csv_dir = "./data_csvs"
@@ -253,7 +253,7 @@ if __name__ == "__main__":
 
         sheet_lst = [item for item in os.listdir(join(data_dir, 'data')) if not item.startswith(".")]
 
-        prep = Preprocessor(sheets_to_load=sheet_lst, src_dir=data_dir)
+        prep = Preprocessor(sheets_to_load=sheet_lst, src_dir=data_dir, sampling_interval=args.samp)
 
         with open(exported_pkl, 'wb') as handle:
             pickle.dump(prep.data, handle, protocol=pickle.DEFAULT_PROTOCOL)
