@@ -1,15 +1,16 @@
 # configuration.yaml
 
 data:
-  pkl_name: './data_pkl.pkl'  # data_pkl.pkl or data_pkl-100ms.pkl
+  pkl_name: './data_pkl-100ms.pkl'  # data_pkl.pkl OR data_pkl-100ms.pkl OR data_pkl-50ms.pkl
   val_samples: ['02', '07']
-  test_samples: ['08', '13', '15', '22', '28']
+  test_samples: ['12', '13', '15', '28', '31']
 
 model:
   name: "LSTM1"
   num_layers: None
-  seq_length_s: 5
-  samp_interval_s: 0.2  # 0.1 or 0.2
+  seq_length_s: 1
+  samp_interval_s: 0.1  # 0.2 OR 0.1 OR 0.05
+  predict_next_t: 1  # horizon of predicting the next {}th time sample (y)
   input_dim: 54
   hidden_dim1: 32
   hidden_dim2: 2
@@ -18,13 +19,13 @@ model:
 
 optimizer:
   name: "RMSprop"
-  lr: 0.001
+  lr: 0.0001
   lr_step_size: 10
   gamma: 0.1
 
 training:
   batch_size: 64
-  epochs: 30
+  epochs: 50
   early_stop_patience: 5
   saved_dir: "./checkpoints"
   saved_best_model: "best_model4.pth"

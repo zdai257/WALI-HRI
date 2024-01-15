@@ -9,9 +9,14 @@ from math import pi
 class WALIHRIDataset(Dataset):
     def __init__(self, data,
                  samp_list,  # specify sample Key other than current split
-                 tau=5, freq=0.2):
+                 tau=5, freq=0.2, predict_next_t=None):
         self.data = data
         self.sequence_length = int(tau / freq) + 1
+
+        if isinstance(predict_next_t, int):
+            self.next_horizon = predict_next_t
+        else:
+            self.next_horizon = 0
 
         self.data_mean, self.data_sd = self.get_mean_sd()
 
@@ -39,9 +44,9 @@ class WALIHRIDataset(Dataset):
 
                 ### 3. Sequence Zero-padding ###
                 # select only sequences with a non-NaN y label, and allow self.sequence_length without padding
-                for i in range(len(feats) - self.sequence_length):
+                for i in range(len(feats) - self.sequence_length - self.next_horizon):
 
-                    labels = val.iloc[i:i + self.sequence_length, val.columns.get_loc('annotation')]
+                    labels = val.iloc[i + self.next_horizon:i + self.sequence_length + self.next_horizon, val.columns.get_loc('annotation')]
                     labels.fillna(0, inplace=True)
                     # skip samples with 'NaN' annotation
                     if labels.isnull().values.any():
@@ -131,7 +136,8 @@ def build_data_loader(config, ctype=None):
                     break
 
         train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
-                                       freq=config['model']['samp_interval_s'])
+                                       freq=config['model']['samp_interval_s'],
+                                       predict_next_t=config['model']['predict_next_t'])
     elif ctype == 'val':
         else_lst = []
         for x in list(my_data.keys()):
@@ -141,7 +147,8 @@ def build_data_loader(config, ctype=None):
                     break
 
         train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
-                                       freq=config['model']['samp_interval_s'])
+                                       freq=config['model']['samp_interval_s'],
+                                       predict_next_t=config['model']['predict_next_t'])
     elif ctype == 'test':
         else_lst = []
         for x in list(my_data.keys()):
@@ -151,7 +158,8 @@ def build_data_loader(config, ctype=None):
                     break
 
         train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
-                                       freq=config['model']['samp_interval_s'])
+                                       freq=config['model']['samp_interval_s'],
+                                       predict_next_t=config['model']['predict_next_t'])
     else:
         raise TypeError("Illegal split")
 
