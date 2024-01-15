@@ -6,7 +6,7 @@ data:
   test_samples: ['12', '13', '15', '28', '31']
 
 model:
-  name: "LSTM1"
+  name: "GRU1"  # LSTM1 or GRU1
   num_layers: None
   seq_length_s: 1
   samp_interval_s: 0.1  # 0.2 OR 0.1 OR 0.05
@@ -28,6 +28,6 @@ training:
   epochs: 50
   early_stop_patience: 5
   saved_dir: "./checkpoints"
-  saved_best_model: "best_model4.pth"
+  saved_best_model: "best_model5.pth"
   is_only_last_timestep: false
   custom_weighted_loss: "linear"  # "linear" or "softmax"
