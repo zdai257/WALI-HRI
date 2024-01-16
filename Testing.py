@@ -101,26 +101,33 @@ def test():
     # Plotting the ROC curves
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-    font = {'size': 16}
+    font = {'size': 18}
     matplotlib.rc('font', **font)
 
-    ax1.plot(FPr, TPr, color='blue', lw=2, label='AUC = %0.3f' % roc_auc)
-    ax1.plot([0, 1], [0, 1], color='red', linestyle='--')
+    ax1.plot(FPr, TPr, color='orange', lw=3, label='AUC = %0.3f' % roc_auc)
+    ax1.plot([0, 1], [0, 1], color='gray', linestyle='--')
     ax1.set_xlim([0.0, 1.0])
     ax1.set_ylim([0.0, 1.05])
-    ax1.set_xlabel('False Positive Rate', fontsize=16)
-    ax1.set_ylabel('True Positive Rate', fontsize=16)
-    ax1.set_title('ROC Curve', fontsize=19)
-    ax1.legend(loc='lower right')
+    ax1.set_xlabel('False Positive Rate', fontsize=19)
+    ax1.set_ylabel('True Positive Rate', fontsize=19)
+    ax1.set_title('ROC Curve', fontsize=21)
+    ax1.legend(loc='lower right', fontsize=18)
+    ax1.tick_params(axis='both', which='major', labelsize=16)
+    ax1.tick_params(axis='both', which='minor', labelsize=15)
 
     # Plotting the Precision-Recall curve
-    ax2.plot(Recall, Precision, color='green', lw=2, label='AUC-PR = %0.3f' % auc_pr)
-    ax2.set_xlabel('Recall', fontsize=16)
-    ax2.set_ylabel('Precision', fontsize=16)
-    ax2.set_title('Precision-Recall Curve', fontsize=19)
-    ax2.legend(loc='lower left')
+    ax2.plot(Recall, Precision, color='green', lw=3, label='AUC-PR = %0.3f' % auc_pr)
+    ax2.set_xlabel('Recall', fontsize=19)
+    ax2.set_ylabel('Precision', fontsize=19)
+    ax2.set_title('Precision-Recall Curve', fontsize=21)
+    ax2.legend(loc='upper right', fontsize=18)
+    ax2.tick_params(axis='both', which='major', labelsize=16)
+    ax2.tick_params(axis='both', which='minor', labelsize=15)
 
-    fig.suptitle('Precision %.3f; Recall %.3f; F1 %.3f' % (precision, recall, F1), fontsize=20)
+    fig.suptitle('Precision %.3f; Recall %.3f; F1 %.3f' % (precision, recall, F1), fontsize=22)
+
+    plt.rc('xtick', labelsize=17)
+    plt.rc('ytick', labelsize=17)
 
     plt.tight_layout()
     plt.savefig(os.path.join('./imgs', '{}.pdf'.format(plot_filename[:-4])), bbox_inches='tight')

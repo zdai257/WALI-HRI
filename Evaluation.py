@@ -138,22 +138,22 @@ if __name__ == "__main__":
     fig, ax1 = plt.subplots(1, 1, figsize=(10, 7))
 
     # Set font sizes for all texts and axis labels
-    plt.rcParams.update({'font.size': 14})
-    ax1.tick_params(axis='both', which='major', labelsize=14)
+    plt.rcParams.update({'font.size': 15})
+    ax1.tick_params(axis='both', which='major', labelsize=15)
 
     ax1.plot(grads, [x[0] for x in results], linestyle='-', linewidth=3, color='blue', label='Precision')
     ax1.plot(grads, [x[1] for x in results], linestyle='-', linewidth=3, color='grey', label='Recall')
-    ax1.set_xlabel('Gradient Threshold', fontsize=17)
-    ax1.set_ylabel('Precision & Recall', fontsize=17)
+    ax1.set_xlabel('Gradient Threshold', fontsize=19)
+    ax1.set_ylabel('Precision & Recall', fontsize=19)
 
     # Create a secondary y-axis for F1-Score on the right side
     ax2 = ax1.twinx()
-    ax2.tick_params(axis='both', which='major', labelsize=14)
+    ax2.tick_params(axis='both', which='major', labelsize=15)
 
     ax2.plot(grads, [x[2] for x in results], linestyle='-', linewidth=3, color='red', label='F1-Score')
-    ax2.set_ylabel('F1 Score', fontsize=17)
+    ax2.set_ylabel('F1 Score', fontsize=19)
 
-    ax1.set_title('Prediction Performance as a function of Engagement Decrease Gradient', fontsize=20)
+    ax1.set_title('Prediction Performance as a function of Engagement Decrease Gradient', fontsize=21)
 
     # set axis limits
     ax1.set_xlim(-0.265, 0.005)
@@ -165,11 +165,11 @@ if __name__ == "__main__":
     lines2, labels2 = ax2.get_legend_handles_labels()
     lines = lines1 + lines2
     labels = labels1 + labels2
-    ax1.legend(lines, labels, loc='best', fontsize=17)
+    ax1.legend(lines, labels, loc='best', fontsize=18)
     #ax1.grid(False)
     plt.tight_layout()
 
     # Save the plot to a PDF file
-    plt.savefig('./imgs/LCAS_Precision_Recall.pdf')
+    plt.savefig('./imgs/LCAS_Precision_Recall2.pdf')
 
     plt.show()
