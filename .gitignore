@@ -17,3 +17,5 @@ raw_*.py
 *.bag
 *.pth
 *-50ms.pkl
+imgs/*.pdf
+

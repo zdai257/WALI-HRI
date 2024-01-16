@@ -128,7 +128,17 @@ def main():
             # Save the best model if needed
             if not os.path.exists(config['training']['saved_dir']):
                 os.makedirs(config['training']['saved_dir'])
-            torch.save(model, os.path.join(config['training']['saved_dir'], config['training']['saved_best_model']))
+
+            saved_file_name = config['training']['saved_best_model'].join(
+                ("best",
+                 config['model']['name'] + "_" + str(config['model']['hidden_dim1']) + "_" + str(config['model']['hidden_dim2']),
+                 config['data']['pkl_name'].split('.')[-2].split('-')[-1],
+                 "window" + str(config['model']['seq_length_s']) + "sec",
+                 config['optimizer']['name'],
+                 "batch" + str(config['training']['batch_size']) + ".pth"
+                 )
+            )
+            torch.save(model, os.path.join(config['training']['saved_dir'], saved_file_name))
         else:
             early_stop_count += 1
             if early_stop_count >= early_stop_patience:

@@ -1,4 +1,5 @@
 import os
+import re
 import yaml
 import torch
 import time
@@ -8,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_recall_curve, average_precision_score
 from models.data_loader import build_data_loader
 from models.lstm import build_lstm
-from Evaluation import *
+from Evaluation import calculate_precision, calculate_recall, calculate_f1_score
 
 
 def calculate_binary_classifier(gt, hypo):
@@ -31,11 +32,19 @@ def test():
         config = yaml.safe_load(file)
 
     model_dir = config['training']['saved_dir']
-    model_file = config['training']['saved_best_model']
+    model_file = config['training']['saved_best_model'].join(
+                ("best",
+                 config['model']['name'] + "_" + str(config['model']['hidden_dim1']) + "_" + str(config['model']['hidden_dim2']),
+                 config['data']['pkl_name'].split('.')[-2].split('-')[-1],
+                 "window" + str(config['model']['seq_length_s']) + "sec",
+                 config['optimizer']['name'],
+                 "batch" + str(config['training']['batch_size']) + ".pth"
+                 )
+            )
 
     model = torch.load(os.path.join(model_dir, model_file))
 
-    test_num = model_file.split('.')[0][-1]
+    plot_filename = re.sub('best', 'results', model_file)
 
     model.eval()
 
@@ -110,7 +119,7 @@ def test():
     ax2.legend(loc='lower left')
 
     plt.tight_layout()
-    plt.savefig(os.path.join('./imgs', 'roc_curve{}.pdf'.format(test_num)), bbox_inches='tight')
+    plt.savefig(os.path.join('./imgs', '{}.pdf'.format(plot_filename[:-4])), bbox_inches='tight')
     plt.show()
 
 
