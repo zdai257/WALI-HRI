@@ -2,7 +2,7 @@
 
 ### Introduction
 
-This repository presents WALI-HRI dataset, with fully annotated 
+This repository presents [WALI-HRI dataset](https://www.youtube.com/watch?v=tGt8HuLLyI0), with fully annotated 
 disengagement/distraction events, collected in an industrial phone assembly scenario 
 of human-robot collaboration. Multimodal sensing streams of 28 
 human participant's attention tracking are made publicly available. The aim is to 
@@ -69,7 +69,7 @@ If only to download the dataset, you do not need to recreate the environment.
 
 The WALI-HAI dataset is publicly available at a [**Box shared drive**](https://aston.box.com/s/vdh27hmczaoyx4t8rbsobjf6mjn67kmb). Note the full dataset size is about 105GB.
 
-To download a data sample
+To download one data sample,
 
 ```bash
 ./downloader.sh
@@ -83,17 +83,25 @@ To load the dataset as a *pandas DataFrame* and resample the multimodal data in 
 python3 preprocess.py --type csv
 ```
 
-or directly load the pre-processed *data_pkl.pkl* pickle file. Note you need *python=3.11* and *pandas=1.5.3* to load the pickle file directly. Neural network training requires *pytorch=1.13.1* with hyperparams stored in *configuration.yaml*
+or directly load the pre-processed *data_pkl.pkl* pickle file. Note it requires *python=3.11* and *pandas=1.5.3* to load the pickle file directly.
+
+Neural network training requires *pytorch=1.13.1* with hyperparams stored in *configuration.yaml*. Use command below to start training,
 
 ```base
 python3 train.py
+```
+
+and the following for evaluation and visualization of results,
+
+```base
+python3 Testing.py
 ```
 
 ------
 
 ### Data Collection Pipeline
 
-Real-time collection of multimodal data is implemented [here](https://github.com/Junaid0411/AstonAttentionLapseResearchProject). Ensure Azure Kinect DK camera(s) and Pupil Capture for eye tracker are connected and installed properly. Use *utils/recordGUI.py* or command below to launch the master recorder
+Runtime data collection pipeline of multimodal data is implemented [here](https://github.com/Junaid0411/AstonAttentionLapseResearchProject). Ensure Azure Kinect DK camera(s) and Pupil Capture for eye tracker are connected and installed properly. Use *utils/recordGUI.py* or command below to launch the master recorder
 
 ```bash
 python3 utils/record_capture.py
@@ -119,9 +127,6 @@ This repository is available under the MIT License. Contributions are not accept
 
 ### Acknowledgement
 
-This work was funded by 2022/23 Aston Pump Priming Scheme and AAU Bridging Project 
-"A Multimodal Attention Tracking In Human-robot Collaboration For Manufacturing 
-Tasks."
+This work was funded by 2022/23 Aston Pump Priming Scheme, and partially supported by AI for the People and Aalborg Robotics Challenge (ARC) Bridging Project, and by Innovation Fund Denmark as a part of the project “MADE FAST”. 
 
-We thank the Greater Birmingham and Solihull Institute of Technology (GBSIoT) and the 
-Aalborg 5G Smart Production Lab for supporting the data collection campaign.
+We thank the Greater Birmingham and Solihull Institute of Technology (GBSIoT) and the Aalborg 5G Smart Production Lab for supporting the data collection campaign.
