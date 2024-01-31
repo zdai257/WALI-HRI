@@ -6,6 +6,10 @@ import pickle
 import datetime
 import matplotlib.pyplot as plt
 
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
+plt.rcParams["font.family"] = "Times New Roman"
+
 
 T_TOLERANCE = 3.0
 GRAD_THRES = -0.10

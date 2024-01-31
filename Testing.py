@@ -11,6 +11,8 @@ from models.data_loader import build_data_loader
 from models.lstm import build_lstm
 from Evaluation import calculate_precision, calculate_recall, calculate_f1_score
 
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
 plt.rcParams["font.family"] = "Times New Roman"
 
 
@@ -124,7 +126,7 @@ def test():
     ax2.tick_params(axis='both', which='major', labelsize=16)
     ax2.tick_params(axis='both', which='minor', labelsize=15)
 
-    fig.suptitle('Precision %.3f; Recall %.3f; F1 %.3f' % (precision, recall, F1), fontsize=22)
+    #fig.suptitle('Precision %.3f; Recall %.3f; F1 %.3f' % (precision, recall, F1), fontsize=22)
 
     plt.rc('xtick', labelsize=17)
     plt.rc('ytick', labelsize=17)

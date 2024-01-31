@@ -7,7 +7,7 @@ suite0/*
 data/*
 /data_csvs
 *.ipynb
-src/.ipynb_checkpoints/analytics-checkpoint.ipynb
+src/.ipynb_checkpoints/*
 sound_masking.py
 annotation_merger.py
 Eval_LCAS.py
