@@ -9,9 +9,10 @@ from math import pi
 class WALIHRIDataset(Dataset):
     def __init__(self, data,
                  samp_list,  # specify sample Key other than current split
-                 tau=5, freq=0.2, predict_next_t=None):
+                 tau=5, freq=0.2, predict_next_t=None, feats_dim=54):
         self.data = data
         self.sequence_length = int(tau / freq) + 1
+        self.feats_dim = feats_dim
 
         if isinstance(predict_next_t, int):
             self.next_horizon = predict_next_t
@@ -34,6 +35,12 @@ class WALIHRIDataset(Dataset):
                 #feats_col = val.iloc[:, np.r_[2:16, 17:]]
 
                 feats_cols = val.drop(columns=['annotation', 'timestamp'])
+
+                ### 0. select feature modalities for training
+                if self.feats_dim != 54:
+                    feats_cols = feats_cols.iloc[:, np.r_[:self.feats_dim]]
+                    #print(feats_cols)
+
                 ### 1. Normalise ###
                 feats_cols = self.normalise(feats_cols)
 
@@ -70,8 +77,9 @@ class WALIHRIDataset(Dataset):
         self.Y = np.expand_dims(np.array(train_y), axis=2)
 
     def normalise(self, df):
-        df = df - self.data_mean
-        return df / (self.data_sd + 1e-12)
+
+        df = df - self.data_mean[:self.feats_dim]
+        return df / (self.data_sd[:self.feats_dim] + 1e-12)
 
     def get_mean_sd(self):
         whole_data = pd.concat(list(self.data.values()), axis=0)
@@ -137,7 +145,8 @@ def build_data_loader(config, ctype=None):
 
         train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
                                        freq=config['model']['samp_interval_s'],
-                                       predict_next_t=config['model']['predict_next_t'])
+                                       predict_next_t=config['model']['predict_next_t'],
+                                       feats_dim=config['model']['input_dim'])
     elif ctype == 'val':
         else_lst = []
         for x in list(my_data.keys()):
@@ -148,7 +157,8 @@ def build_data_loader(config, ctype=None):
 
         train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
                                        freq=config['model']['samp_interval_s'],
-                                       predict_next_t=config['model']['predict_next_t'])
+                                       predict_next_t=config['model']['predict_next_t'],
+                                       feats_dim=config['model']['input_dim'])
     elif ctype == 'test':
         else_lst = []
         for x in list(my_data.keys()):
@@ -159,7 +169,8 @@ def build_data_loader(config, ctype=None):
 
         train_dataset = WALIHRIDataset(my_data, else_lst, tau=config['model']['seq_length_s'],
                                        freq=config['model']['samp_interval_s'],
-                                       predict_next_t=config['model']['predict_next_t'])
+                                       predict_next_t=config['model']['predict_next_t'],
+                                       feats_dim=config['model']['input_dim'])
     else:
         raise TypeError("Illegal split")
 
