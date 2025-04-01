@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 
 
 class LSTM1(nn.Module):
@@ -90,6 +92,39 @@ class GRU1(nn.Module):
         return out
 
 
+def make_cuda(tensor):
+    """Use CUDA if it's available."""
+    if torch.cuda.is_available():
+        tensor = tensor.cuda()
+    return tensor
+
+
+class EALSTM(nn.Module):
+    def __init__(self, n_features=54, n_hidden=32, n_layers=2, n_output=1, weight=None, bidirectional=True):
+        super(EALSTM, self).__init__()
+        self.n_hidden = n_hidden
+        self.n_layers = n_layers
+        self.weight = make_cuda(torch.FloatTensor(weight))
+        self.bidirectional = bidirectional
+        self.lstm = nn.LSTM(input_size=n_features, hidden_size=n_hidden,
+                            num_layers=n_layers, bidirectional=bidirectional,
+                            batch_first=True)
+        self.regr = nn.Linear(2 * n_hidden if bidirectional else n_hidden, n_output)
+
+    def forward(self, inputs):  # inputs: [batch_size, time_steps, n_features]
+        n_batch = inputs.size(0)
+        inputs = torch.transpose(torch.transpose(inputs, -1, -2) * self.weight, -1, -2)
+        _, (hidden, cell) = self.lstm(inputs)
+        hidden = hidden.view(self.n_layers, 2 if self.bidirectional else 1, n_batch, self.n_hidden)
+        if self.bidirectional:
+            f_hidden, b_hidden = hidden[-1]
+            hidden = torch.cat((f_hidden, b_hidden), dim=1)
+        else:
+            hidden = hidden[-1]
+        out = self.regr(hidden)
+        return out.view(-1)
+
+
 def build_lstm(config):
 
     # Initialize the LSTM / GRU model
@@ -108,6 +143,13 @@ def build_lstm(config):
                      #hidden_dim3=config['model']['hidden_dim3'],
                      dropout_prob=config['model']['dropout_prob']
                      )
+
+    elif config['model']['name'] == "EALSTM":
+        model = EALSTM(n_features=config['model']['input_dim'],
+                       n_hidden=config['model']['hidden_dim1'],
+                       weight=21 * [1.0],
+                       bidirectional=True
+                       )
 
     else:
         raise NameError("Does not support this model name!")

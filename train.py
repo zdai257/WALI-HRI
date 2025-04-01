@@ -70,14 +70,18 @@ def main():
             for idx, (inputs, targets) in enumerate(train_loader):
                 model.train()
                 criteria.train()
+                #print(inputs.shape)
 
                 pred = model(inputs)
 
-                #print("Out shape: ", pred.shape)
+                #print("Out shape: {}, Targets shape: {}".format(pred.shape, targets.shape))
 
                 # discuss if Loss func considers all timesteps or not
-                if config['training']['is_only_last_timestep'] == "true":
-                    loss = criteria(pred[:, -1], targets[:, -1])
+                if config['training']['is_only_last_timestep'] == 1:
+                    if config['model']['name'] == 'EALSTM':
+                        loss = criteria(pred, targets[:, -1, 0])
+                    else:
+                        loss = criteria(pred[:, -1], targets[:, -1])
                 else:
                     loss = 0
                     for i in range(seq_length):
@@ -109,8 +113,11 @@ def main():
                     val_pred = model(inputs)
 
                     # discuss if Loss func considers all timesteps or not
-                    if config['training']['is_only_last_timestep'] == "true":
-                        loss = criteria(val_pred[:, -1], targets[:, -1])
+                    if config['training']['is_only_last_timestep'] == 1:
+                        if config['model']['name'] == 'EALSTM':
+                            loss = criteria(val_pred, targets[:, -1, 0])
+                        else:
+                            loss = criteria(val_pred[:, -1], targets[:, -1])
                     else:
                         loss = 0
                         for i in range(seq_length):

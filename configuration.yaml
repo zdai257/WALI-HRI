@@ -6,7 +6,7 @@ data:
   test_samples: ['12', '13', '15', '28', '31']
 
 model:
-  name: "GRU1"  # LSTM1 or GRU1
+  name: "EALSTM"  # LSTM1 or GRU1 or EALSTM
   num_layers: None
   seq_length_s: 2
   samp_interval_s: 0.1  # 0.2 OR 0.1 OR 0.05
@@ -27,7 +27,7 @@ training:
   batch_size: 48
   epochs: 50
   early_stop_patience: 5
-  saved_dir: "./checkpoints_abla-HGBR"
+  saved_dir: "./checkpoints_ealstm"
   saved_best_model: "-"
-  is_only_last_timestep: false
+  is_only_last_timestep: 1
   custom_weighted_loss: "linear"  # "linear" or "softmax"
