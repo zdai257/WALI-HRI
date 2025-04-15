@@ -9,6 +9,7 @@ from sklearn.metrics import accuracy_score
 import tqdm
 from models.data_loader import build_data_loader
 from models.lstm import build_lstm
+from models.crossformer import build_transformer
 
 
 def main():
@@ -21,7 +22,15 @@ def main():
     num_epochs = config['training']['epochs']
     early_stop_patience = config['training']['early_stop_patience']
 
-    model, criteria = build_lstm(config)
+    if config['model']['name'] == "transformer":
+        model = build_transformer(config)
+        criteria = torch.nn.BCEWithLogitsLoss()
+    else:
+        model, criteria = build_lstm(config)
+
+    n_parameters = sum(p.numel()
+                       for p in model.parameters() if p.requires_grad)
+    print(f"Number of learnable params: {n_parameters}")
 
     if config['optimizer']['name'] == 'RMSprop':
         optimizer = RMSprop(model.parameters(), lr=lr)
