@@ -31,6 +31,9 @@ def calculate_binary_classifier(gt, hypo):
 
 @torch.no_grad()
 def test():
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+
     # Load config file
     with open('configuration.yaml', 'r') as file:
         config = yaml.safe_load(file)
@@ -46,7 +49,7 @@ def test():
                  )
             )
 
-    model = torch.load(os.path.join(model_dir, model_file))
+    model = torch.load(os.path.join(model_dir, model_file)).to(device)
 
     plot_filename = re.sub('best', 'results', model_file)
 
@@ -64,7 +67,7 @@ def test():
     for idx, (inputs, targets) in enumerate(test_loader):
         start_time = time.time()
 
-        pred = model(inputs)
+        pred = model(inputs.to(device))
 
         elapsed_time.append(time.time() - start_time)
         #print("Out shape: ", pred.shape)

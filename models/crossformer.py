@@ -388,7 +388,7 @@ def build_transformer(config):
         out_len=1,  # Length of output/future sequence
         seg_len=6,  # Length of each segment in DSW embedding, i.e. the paper (defaults to 6)
         win_size=2,  # How many adjacent segments to be merged into one in segment merging of HED (defaults to 4)
-        factor=5,
+        factor=8,
         d_model=256,
         d_ff=512,  # Dimension of MLP in MSA (defaults to 512)
         n_heads=4,  # Num of heads in MSA (defaults to 4)

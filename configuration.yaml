@@ -26,7 +26,7 @@ optimizer:
   gamma: 0.01
 
 training:
-  batch_size: 36
+  batch_size: 48
   epochs: 50
   early_stop_patience: 7
   saved_dir: "./checkpoints_crossformer"
