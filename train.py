@@ -11,6 +11,22 @@ from models.data_loader import build_data_loader
 from models.lstm import build_lstm
 from models.crossformer import build_transformer
 
+from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_recall_curve, average_precision_score
+from Evaluation import calculate_precision, calculate_recall, calculate_f1_score
+
+
+def calculate_binary_classifier(gt, hypo):
+    TP, FP, FN = 0, 0, 0
+    for idx, x in enumerate(gt):
+        #print(x, hypo[idx])
+        if x == 1 and round(hypo[idx]) == 1:
+            TP += 1
+        elif x == 0 and round(hypo[idx]) == 1:
+            FP += 1
+        elif x == 1 and round(hypo[idx]) == 0:
+            FN += 1
+    return TP, FP, FN
+
 
 def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -126,6 +142,7 @@ def main():
         val_loss = 0.0
         val_total = len(val_loader)
 
+        preds, gts = [], []
         with tqdm.tqdm(total=val_total) as pbar:
             with torch.no_grad():
                 for idx, (inputs, targets) in enumerate(val_loader):
@@ -144,11 +161,32 @@ def main():
                         loss = 0
                         for i in range(seq_length):
                             loss += criteria(val_pred[:, i, :], targets[:, i, :]) * seq_weights[i]
+                    
+                    for id in range(targets.shape[0]):
+                        preds.append(float(torch.sigmoid(val_pred[id][-1][0]).detach()))
+                        gts.append(float(targets[id][-1][0].detach()))
 
                     val_loss += loss.item()
                     pbar.update(1)
 
             print("Validation loss: ", val_loss / val_total)
+
+        # visualise Metrics
+        tp, fp, fn = calculate_binary_classifier(gts, preds)
+        print("TP = {}, FP = {}, FN = {}, among a total of {} testing samples.".format(tp, fp, fn, len(val_loader)))
+        if tp == 0:
+            tp += 1 
+        precision = calculate_precision(tp, fp)
+        recall = calculate_recall(tp, fn)
+        F1 = calculate_f1_score(precision, recall)
+        FPr, TPr, thresholds = roc_curve(gts, preds, sample_weight=None, drop_intermediate=True)
+        roc_auc = auc(FPr, TPr)
+        Precision, Recall, _ = precision_recall_curve(gts, preds)
+        # Calculate the area under the precision-recall curve (AUC-PR)
+        auc_pr = average_precision_score(gts, preds)
+        #print("TP = {}, FP = {}, FN = {}, among a total of {} testing samples.".format(tp, fp, fn, len(test_loader)))
+        print("Precision = {}, Recall = {}, F1 score = {}".format(precision, recall, F1))
+        print("AUC = {}; Precision-Recall Curve = {}".format(roc_auc, auc_pr))
 
         # Example early stopping based on validation loss
         if val_loss / val_total < best_val_loss:

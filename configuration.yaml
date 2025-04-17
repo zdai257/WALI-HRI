@@ -8,7 +8,7 @@ data:
 model:
   name: "transformer"  # LSTM1 or GRU1 or EALSTM
   num_layers: None
-  seq_length_s: 3
+  seq_length_s: 2
   samp_interval_s: 0.1  # 0.2 OR 0.1 OR 0.05
   predict_next_t: 1  # horizon of predicting the next {}th time sample (y)
   input_dim: 14  # Original: 54, Abla: {9, 12, 13, 14,}
@@ -21,12 +21,12 @@ model:
 optimizer:
   name: "AdamW"  # RMSprop, Adam, AdamW
   schedule: "cosine"  # linear, cosine, plateau
-  lr: 0.0001
+  lr: 0.000025
   lr_step_size: 40
   gamma: 0.01
 
 training:
-  batch_size: 64
+  batch_size: 36
   epochs: 50
   early_stop_patience: 7
   saved_dir: "./checkpoints_crossformer"
