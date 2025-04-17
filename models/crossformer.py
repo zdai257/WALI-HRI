@@ -340,8 +340,13 @@ class Crossformer(nn.Module):
         self.decoder = Decoder(seg_len, e_layers + 1, d_model, n_heads, d_ff, dropout, \
                                out_seg_num=(self.pad_out_len // seg_len), factor=factor)
 
-        ### last output layer
-        self.last_fc = nn.Linear(self.data_dim, 1)
+        ### last output layer for binary classification ###
+        self.cls_head = nn.Sequential(
+            nn.Linear(data_dim, 12),  # Project to intermediate dimension
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(12, 1)  # Final binary output
+        )
 
     def forward(self, x_seq):
         if (self.baseline):
@@ -363,9 +368,13 @@ class Crossformer(nn.Module):
 
         ### Original ###
         #model_out = base + predict_y[:, :self.out_len, :]
-        ### New
-        model_out = self.last_fc(base + predict_y[:, :self.out_len, :])
-        return model_out
+        ### New ###
+        last_token = predict_y[:, -1:, :]  # Shape: [batch_size, d_model]
+        # Classification head
+        logits = self.cls_head(last_token)  # Shape: [batch_size, 1]
+        # Remove extra dimension for binary classification
+        #logits = logits.squeeze(-1)  # Shape: [batch_size]
+        return logits
 
 
 def build_transformer(config):
@@ -379,6 +388,7 @@ def build_transformer(config):
         out_len=1,  # Length of output/future sequence
         seg_len=6,  # Length of each segment in DSW embedding, i.e. the paper (defaults to 6)
         win_size=2,  # How many adjacent segments to be merged into one in segment merging of HED (defaults to 4)
+        factor=5,
         d_model=256,
         d_ff=512,  # Dimension of MLP in MSA (defaults to 512)
         n_heads=4,  # Num of heads in MSA (defaults to 4)

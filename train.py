@@ -3,7 +3,7 @@ import yaml
 import torch
 import numpy as np
 from torch.optim import RMSprop, Adam, AdamW
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import tqdm
@@ -13,6 +13,9 @@ from models.crossformer import build_transformer
 
 
 def main():
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+
     # Load config file
     with open('configuration.yaml', 'r') as file:
         config = yaml.safe_load(file)
@@ -23,10 +26,10 @@ def main():
     early_stop_patience = config['training']['early_stop_patience']
 
     if config['model']['name'] == "transformer":
-        model = build_transformer(config)
+        model = build_transformer(config).to(device)
         criteria = torch.nn.BCEWithLogitsLoss()
     else:
-        model, criteria = build_lstm(config)
+        model, criteria = build_lstm(config).to(device)
 
     n_parameters = sum(p.numel()
                        for p in model.parameters() if p.requires_grad)
@@ -35,17 +38,22 @@ def main():
     if config['optimizer']['name'] == 'RMSprop':
         optimizer = RMSprop(model.parameters(), lr=lr)
     elif config['optimizer']['name'] == 'Adam':
-        optimizer = Adam(model.parameters(), lr=lr)
+        optimizer = Adam(model.parameters(), lr=lr, weight_decay=0.01)
     elif config['optimizer']['name'] == 'AdamW':
-        optimizer = AdamW(model.parameters(), lr=lr)
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     else:
         raise TypeError("Optimizer not supported!")
 
-    # Define a linear learning rate scheduler
+    # Define a lr scheduler
     lr_step_size = config['optimizer']['lr_step_size']
     gamma = config['optimizer']['gamma']  # Factor by which the learning rate will be reduced
-    scheduler = StepLR(optimizer, step_size=lr_step_size, gamma=gamma)
-
+    if config['optimizer']['schedule'] == 'linear':
+        scheduler = StepLR(optimizer, step_size=lr_step_size, gamma=gamma)
+    elif config['optimizer']['schedule'] == 'plateau':
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5, min_lr=1e-6)
+    else:  # cosine by default
+        scheduler = CosineAnnealingLR(optimizer, T_max=lr_step_size)
+        
     train_loader = build_data_loader(config)
     val_loader = build_data_loader(config, 'val')
     #test_loader = build_data_loader(config, 'test')
@@ -81,9 +89,12 @@ def main():
                 criteria.train()
                 #print(inputs.shape)
 
-                pred = model(inputs)
+                pred = model(inputs.to(device))
 
+                # pred shape: (B, 1, 1); Target shape: (B, seq_len, 1)
                 #print("Out shape: {}, Targets shape: {}".format(pred.shape, targets.shape))
+
+                targets = targets.to(device)
 
                 # discuss if Loss func considers all timesteps or not
                 if config['training']['is_only_last_timestep'] == 1:
@@ -119,7 +130,9 @@ def main():
             with torch.no_grad():
                 for idx, (inputs, targets) in enumerate(val_loader):
 
-                    val_pred = model(inputs)
+                    val_pred = model(inputs.to(device))
+
+                    targets = targets.to(device)
 
                     # discuss if Loss func considers all timesteps or not
                     if config['training']['is_only_last_timestep'] == 1:
@@ -161,7 +174,10 @@ def main():
                 print(f"Early stopping at epoch {epoch}. Best validation loss: {best_val_loss}")
                 break
 
-        scheduler.step()
+        if config['optimizer']['schedule'] == 'plateau':
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
 
 
 if __name__ == "__main__":
